@@ -13,9 +13,10 @@
  * Foundation, 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
  * Copyright IBM Corp. 2007
- * Copyright 2011 Freescale Semiconductor, Inc.
+ * Copyright 2011,2012 Freescale Semiconductor, Inc.
  *
  * Authors: Hollis Blanchard <hollisb@us.ibm.com>
+ * Authors: Alexander Graf <agraf@suse.de>
  */
 
 #include <linux/jiffies.h>
