@@ -880,7 +880,8 @@ int kvm_vcpu_ioctl_get_one_reg(struct kvm_vcpu *vcpu, struct kvm_one_reg *reg)
 
 	switch (reg->id) {
 	case KVM_REG_PPC_HIOR:
-		r = put_user(to_book3s(vcpu)->hior, (u64 __user *)reg->addr);
+		r = put_user(to_book3s(vcpu)->hior,
+			     (u64 __user *)(long)reg->addr);
 		break;
 	default:
 		break;
@@ -895,7 +896,8 @@ int kvm_vcpu_ioctl_set_one_reg(struct kvm_vcpu *vcpu, struct kvm_one_reg *reg)
 
 	switch (reg->id) {
 	case KVM_REG_PPC_HIOR:
-		r = get_user(to_book3s(vcpu)->hior, (u64 __user *)reg->addr);
+		r = get_user(to_book3s(vcpu)->hior,
+			     (u64 __user *)(long)reg->addr);
 		if (!r)
 			to_book3s(vcpu)->hior_explicit = true;
 		break;
