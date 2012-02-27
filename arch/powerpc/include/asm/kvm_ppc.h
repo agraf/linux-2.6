@@ -43,6 +43,7 @@ enum emulation_result {
 	EMULATE_DO_DCR,       /* kvm_run filled with DCR request */
 	EMULATE_FAIL,         /* can't emulate this instruction */
 	EMULATE_AGAIN,        /* something went wrong. go again */
+	EMULATE_DONE_KEEPNIP, /* no further processing, but NIP stays */
 };
 
 struct kvmppc_opentry {

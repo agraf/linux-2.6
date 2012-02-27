@@ -147,6 +147,8 @@ static int kvmppc_emulate_entry(struct kvm_vcpu *vcpu, struct kvmppc_opentry *e,
 
 	if (r == EMULATE_DONE)
 		kvmppc_set_pc(vcpu, kvmppc_get_pc(vcpu) + 4);
+	if (r == EMULATE_DONE_KEEPNIP)
+		r = EMULATE_DONE;
 
 	return r;
 }
@@ -248,6 +250,16 @@ static int kvmppc_emulate_sthu(struct kvm_vcpu *vcpu, int rt, int ra, int d)
 	return r;
 }
 
+static int kvmppc_emulate_trap(struct kvm_vcpu *vcpu, int to, int ra, int si)
+{
+#ifdef CONFIG_PPC_BOOK3S
+	kvmppc_core_queue_program(vcpu, SRR1_PROGTRAP);
+#else
+	kvmppc_core_queue_program(vcpu, vcpu->arch.shared->esr | ESR_PTR);
+#endif
+	return EMULATE_DONE_KEEPNIP;
+}
+
 /* XXX to do:
  * lhax
  * lhaux
@@ -281,17 +293,6 @@ int kvmppc_emulate_instruction(struct kvm_run *run, struct kvm_vcpu *vcpu)
 	pr_debug("Emulating opcode %d / %d\n", get_op(inst), get_xop(inst));
 
 	switch (get_op(inst)) {
-	case OP_TRAP:
-#ifdef CONFIG_PPC_BOOK3S
-	case OP_TRAP_64:
-		kvmppc_core_queue_program(vcpu, SRR1_PROGTRAP);
-#else
-		kvmppc_core_queue_program(vcpu,
-					  vcpu->arch.shared->esr | ESR_PTR);
-#endif
-		advance = 0;
-		break;
-
 	case 31:
 		switch (get_xop(inst)) {
 
@@ -606,4 +607,8 @@ void __init kvmppc_emulate_init(void)
 	kvmppc_emulate_register_d(OP_LHAU, 0, kvmppc_emulate_lhau);
 	kvmppc_emulate_register_d(OP_STH, 0, kvmppc_emulate_sth);
 	kvmppc_emulate_register_d(OP_STHU, 0, kvmppc_emulate_sthu);
+	kvmppc_emulate_register_d(OP_TRAP, 0, kvmppc_emulate_trap);
+#ifdef CONFIG_PPC_BOOK3S
+	kvmppc_emulate_register_d(OP_TRAP64, 0, kvmppc_emulate_trap);
+#endif
 }
