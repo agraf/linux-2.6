@@ -45,6 +45,16 @@ enum emulation_result {
 	EMULATE_AGAIN,        /* something went wrong. go again */
 };
 
+struct kvmppc_opentry {
+	int (*func);
+	int flags;
+};
+
+#define EMUL_FORM_MASK		0x1f
+
+extern void kvmppc_emulate_init(void);
+extern void kvmppc_emulate_register(int op, int flags, int (*func));
+
 extern int kvmppc_vcpu_run(struct kvm_run *kvm_run, struct kvm_vcpu *vcpu);
 extern int __kvmppc_vcpu_run(struct kvm_run *kvm_run, struct kvm_vcpu *vcpu);
 extern char kvmppc_handlers_start[];

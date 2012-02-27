@@ -74,6 +74,8 @@
 #define OP_STH  44
 #define OP_STHU 45
 
+struct kvmppc_opentry kvmppc_list_op[0x40];
+
 void kvmppc_emulate_dec(struct kvm_vcpu *vcpu)
 {
 	unsigned long dec_nsec;
@@ -128,6 +130,20 @@ u32 kvmppc_get_dec(struct kvm_vcpu *vcpu, u64 tb)
 #endif
 
 	return vcpu->arch.dec - jd;
+}
+
+static int kvmppc_emulate_entry(struct kvm_vcpu *vcpu, struct kvmppc_opentry *e,
+				u32 inst)
+{
+	int r = EMULATE_FAIL;
+
+	switch (e->flags & EMUL_FORM_MASK) {
+	}
+
+	if (r == EMULATE_DONE)
+		kvmppc_set_pc(vcpu, kvmppc_get_pc(vcpu) + 4);
+
+	return r;
 }
 
 /* XXX to do:
@@ -519,8 +535,14 @@ int kvmppc_emulate_instruction(struct kvm_run *run, struct kvm_vcpu *vcpu)
 		kvmppc_set_gpr(vcpu, ra, vcpu->arch.vaddr_accessed);
 		break;
 
-	default:
-		emulated = EMULATE_FAIL;
+	default: {
+		struct kvmppc_opentry *e = &kvmppc_list_op[get_op(inst)];
+		if (e->func) {
+			return kvmppc_emulate_entry(vcpu, e, inst);
+		} else {
+			emulated = EMULATE_FAIL;
+		}
+	}
 	}
 
 	if (emulated == EMULATE_FAIL) {
@@ -542,4 +564,18 @@ int kvmppc_emulate_instruction(struct kvm_run *run, struct kvm_vcpu *vcpu)
 		kvmppc_set_pc(vcpu, kvmppc_get_pc(vcpu) + 4);
 
 	return emulated;
+}
+
+void __init kvmppc_emulate_register(int op, int flags, int (*func))
+{
+	struct kvmppc_opentry entry = {
+		.flags = flags,
+		.func = func,
+	};
+
+	kvmppc_list_op[op] = entry;
+}
+
+void __init kvmppc_emulate_init(void)
+{
 }

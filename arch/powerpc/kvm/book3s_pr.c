@@ -1240,6 +1240,7 @@ static int kvmppc_book3s_init(void)
 {
 	int r;
 
+	kvmppc_emulate_init();
 	r = kvm_init(NULL, sizeof(struct kvmppc_vcpu_book3s), 0,
 		     THIS_MODULE);
 
