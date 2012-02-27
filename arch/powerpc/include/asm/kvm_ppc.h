@@ -57,7 +57,7 @@ struct kvmppc_opentry {
 
 extern void kvmppc_emulate_init(void);
 extern void kvmppc_emulate_exit(void);
-extern void __init kvmppc_emulate_register_d(int op, int flags,
+extern void kvmppc_emulate_register_d(int op, int flags,
                 int (*func)(struct kvm_vcpu *vcpu, int rt, int ra, int d));
 extern void kvmppc_emulate_register_x(int op, int flags,
 	int (*func)(struct kvm_vcpu *vcpu, int rt, int ra, int rb, int rc));
