@@ -307,7 +307,7 @@ static int kvmppc_emulate_stbux(struct kvm_vcpu *vcpu, int rs, int ra, int rb,
 	ulong val = kvmppc_get_gpr(vcpu, rs);
 	r = kvmppc_handle_store(vcpu->run, vcpu, val, 1, 1);
 	kvmppc_set_gpr(vcpu, rs, vcpu->arch.vaddr_accessed);
-	break;
+	return r;
 }
 
 static int kvmppc_emulate_lhax(struct kvm_vcpu *vcpu, int rt, int ra, int rb,
