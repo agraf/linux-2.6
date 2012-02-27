@@ -179,7 +179,8 @@ static int kvmppc_emulate_lbzu(struct kvm_vcpu *vcpu, int rt, int ra, int d)
 
 static int kvmppc_emulate_stw(struct kvm_vcpu *vcpu, int rs, int ra, int d)
 {
-	return kvmppc_handle_store(vcpu->run, vcpu, kvmppc_get_gpr(vcpu, rs), 4, 1);
+	ulong val = kvmppc_get_gpr(vcpu, rs);
+	return kvmppc_handle_store(vcpu->run, vcpu, val, 4, 1);
 }
 
 static int kvmppc_emulate_stwu(struct kvm_vcpu *vcpu, int rt, int ra, int d)
