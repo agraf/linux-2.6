@@ -260,6 +260,12 @@ static int kvmppc_emulate_sthu(struct kvm_vcpu *vcpu, int rs, int ra, int d)
 	return r;
 }
 
+static int kvmppc_emulate_lwzx(struct kvm_vcpu *vcpu, int rt, int ra, int rb,
+			       int rc)
+{
+	return kvmppc_handle_load(vcpu->run, vcpu, rt, 4, 1);
+}
+
 static int kvmppc_emulate_trap(struct kvm_vcpu *vcpu, int to, int ra, int si)
 {
 #ifdef CONFIG_PPC_BOOK3S
@@ -318,11 +324,6 @@ int kvmppc_emulate_instruction(struct kvm_run *run, struct kvm_vcpu *vcpu)
 #endif
 			advance = 0;
 			break;
-		case OP_31_XOP_LWZX:
-			rt = get_rt(inst);
-			emulated = kvmppc_handle_load(run, vcpu, rt, 4, 1);
-			break;
-
 		case OP_31_XOP_LBZX:
 			rt = get_rt(inst);
 			emulated = kvmppc_handle_load(run, vcpu, rt, 1, 1);
@@ -642,6 +643,8 @@ void __init kvmppc_emulate_init(void)
 				   GFP_KERNEL | GFP_ZERO);
 
 	kvmppc_emulate_register(31, EMUL_FORM_X, NULL);
+	kvmppc_emulate_register_x(OP_31_XOP_LWZX, EMUL_FORM_X,
+				  kvmppc_emulate_lwzx);
 }
 
 void __exit kvmppc_emulate_exit(void)
