@@ -166,7 +166,7 @@ static int kvmppc_emulate_lwzu(struct kvm_vcpu *vcpu, int rt, int ra, int d)
 
 static int kvmppc_emulate_lbz(struct kvm_vcpu *vcpu, int rt, int ra, int d)
 {
-	return kvmppc_handle_load(run, vcpu, rt, 1, 1);
+	return kvmppc_handle_load(vcpu->run, vcpu, rt, 1, 1);
 }
 
 static int kvmppc_emulate_lbzu(struct kvm_vcpu *vcpu, int rt, int ra, int d)
