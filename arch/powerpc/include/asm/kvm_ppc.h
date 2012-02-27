@@ -52,7 +52,7 @@ struct kvmppc_opentry {
 };
 
 #define EMUL_FORM_MASK		0x1f
-#define EMUL_FORM_D		0x00
+#define EMUL_FORM_D		0x01
 #define EMUL_FORM_X		0x02
 
 extern void kvmppc_emulate_init(void);
