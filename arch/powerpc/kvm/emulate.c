@@ -75,6 +75,7 @@
 #define OP_STHU 45
 
 struct kvmppc_opentry *kvmppc_list_op;
+struct kvmppc_opentry *kvmppc_list_op31;
 
 void kvmppc_emulate_dec(struct kvm_vcpu *vcpu)
 {
@@ -613,7 +614,7 @@ void __init kvmppc_emulate_register_x(int xop, int flags,
 {
 	struct kvmppc_opentry entry = {
 		.flags = flags | EMUL_FORM_X,
-		.func = func,
+		.func = (void*)func,
 	};
 
 	xop &= 0x3ff;
@@ -646,7 +647,7 @@ void __init kvmppc_emulate_init(void)
 
 	/* op31 is special in that it multiplexes */
 	kvmppc_list_op31 = kmalloc(sizeof(struct kvmppc_opentry) * 0x400,
-				   GFP_KERNEL | GFP_ZERO);
+				   GFP_KERNEL | __GFP_ZERO);
 
 	kvmppc_emulate_register(31, EMUL_FORM_X, NULL);
 	kvmppc_emulate_register_x(OP_31_XOP_LWZX, EMUL_FORM_X,
