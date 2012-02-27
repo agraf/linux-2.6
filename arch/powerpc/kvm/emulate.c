@@ -571,13 +571,14 @@ int kvmppc_emulate_instruction(struct kvm_run *run, struct kvm_vcpu *vcpu)
 	return emulated;
 }
 
-void __init kvmppc_emulate_register(int op, int flags, int (*func))
+static void __init kvmppc_emulate_register(int op, int flags, int (*func))
 {
 	struct kvmppc_opentry entry = {
 		.flags = flags,
 		.func = func,
 	};
 
+	op &= 0x3f;
 	kvmppc_list_op[op] = entry;
 }
 
