@@ -156,6 +156,13 @@ static int kvmppc_emulate_lwz(struct kvm_vcpu *vcpu, int rt, int ra, int d)
 	return kvmppc_handle_load(vcpu->run, vcpu, rt, 4, 1);
 }
 
+static int kvmppc_emulate_lwzu(struct kvm_vcpu *vcpu, int rt, int ra, int d)
+{
+	int r;
+	r = kvmppc_handle_load(run, vcpu, rt, 4, 1);
+	kvmppc_set_gpr(vcpu, ra, vcpu->arch.vaddr_accessed);
+}
+
 /* XXX to do:
  * lhax
  * lhaux
@@ -449,13 +456,6 @@ int kvmppc_emulate_instruction(struct kvm_run *run, struct kvm_vcpu *vcpu)
 		}
 		break;
 
-	case OP_LWZU:
-		ra = get_ra(inst);
-		rt = get_rt(inst);
-		emulated = kvmppc_handle_load(run, vcpu, rt, 4, 1);
-		kvmppc_set_gpr(vcpu, ra, vcpu->arch.vaddr_accessed);
-		break;
-
 	case OP_LBZ:
 		rt = get_rt(inst);
 		emulated = kvmppc_handle_load(run, vcpu, rt, 1, 1);
@@ -592,4 +592,5 @@ void __init kvmppc_emulate_register_d(int op, int flags,
 void __init kvmppc_emulate_init(void)
 {
 	kvmppc_emulate_register_d(OP_LWZ, 0, kvmppc_emulate_lwz);
+	kvmppc_emulate_register_d(OP_LWZU, 0, kvmppc_emulate_lwzu);
 }
