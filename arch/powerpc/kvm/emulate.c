@@ -372,6 +372,13 @@ static int kvmppc_emulate_tlbsync(struct kvm_vcpu *vcpu, int rt, int ra, int rb,
 	return EMULATE_DONE;
 }
 
+static int kvmppc_emulate_stwbrx(struct kvm_vcpu *vcpu, int rs, int ra, int rb,
+				 int rc)
+{
+	ulong val = kvmppc_get_gpr(vcpu, rs);
+	return kvmppc_handle_store(vcpu->run, vcpu, val, 4, 0);
+}
+
 static int kvmppc_emulate_trap(struct kvm_vcpu *vcpu, int to, int ra, int si)
 {
 #ifdef CONFIG_PPC_BOOK3S
@@ -534,16 +541,6 @@ int kvmppc_emulate_instruction(struct kvm_run *run, struct kvm_vcpu *vcpu)
 			kvmppc_set_exit_type(vcpu, EMULATED_MTSPR_EXITS);
 			break;
 
-		case OP_31_XOP_STWBRX:
-			rs = get_rs(inst);
-			ra = get_ra(inst);
-			rb = get_rb(inst);
-
-			emulated = kvmppc_handle_store(run, vcpu,
-						       kvmppc_get_gpr(vcpu, rs),
-			                               4, 0);
-			break;
-
 		case OP_31_XOP_LHBRX:
 			rt = get_rt(inst);
 			emulated = kvmppc_handle_load(run, vcpu, rt, 2, 0);
@@ -681,6 +678,8 @@ void __init kvmppc_emulate_init(void)
 				  kvmppc_emulate_lwbrx);
 	kvmppc_emulate_register_x(OP_31_XOP_TLBSYNC, EMUL_FORM_X,
 				  kvmppc_emulate_tlbsync);
+	kvmppc_emulate_register_x(OP_31_XOP_STWBRX, EMUL_FORM_X,
+				  kvmppc_emulate_stwbrx);
 }
 
 void __exit kvmppc_emulate_exit(void)
