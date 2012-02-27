@@ -609,6 +609,6 @@ void __init kvmppc_emulate_init(void)
 	kvmppc_emulate_register_d(OP_STHU, 0, kvmppc_emulate_sthu);
 	kvmppc_emulate_register_d(OP_TRAP, 0, kvmppc_emulate_trap);
 #ifdef CONFIG_PPC_BOOK3S
-	kvmppc_emulate_register_d(OP_TRAP64, 0, kvmppc_emulate_trap);
+	kvmppc_emulate_register_d(OP_TRAP_64, 0, kvmppc_emulate_trap);
 #endif
 }
