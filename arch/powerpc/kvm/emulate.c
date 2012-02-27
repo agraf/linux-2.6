@@ -207,6 +207,11 @@ static int kvmppc_emulate_stbu(struct kvm_vcpu *vcpu, int rt, int ra, int d)
 	return r;
 }
 
+static int kvmppc_emulate_lhz(struct kvm_vcpu *vcpu, int rt, int ra, int d)
+{
+	return kvmppc_handle_load(vcpu->run, vcpu, rt, 2, 1);
+}
+
 /* XXX to do:
  * lhax
  * lhaux
@@ -500,11 +505,6 @@ int kvmppc_emulate_instruction(struct kvm_run *run, struct kvm_vcpu *vcpu)
 		}
 		break;
 
-	case OP_LHZ:
-		rt = get_rt(inst);
-		emulated = kvmppc_handle_load(run, vcpu, rt, 2, 1);
-		break;
-
 	case OP_LHZU:
 		ra = get_ra(inst);
 		rt = get_rt(inst);
@@ -599,4 +599,5 @@ void __init kvmppc_emulate_init(void)
 	kvmppc_emulate_register_d(OP_STWU, 0, kvmppc_emulate_stwu);
 	kvmppc_emulate_register_d(OP_STB, 0, kvmppc_emulate_stb);
 	kvmppc_emulate_register_d(OP_STBU, 0, kvmppc_emulate_stbu);
+	kvmppc_emulate_register_d(OP_LHZ, 0, kvmppc_emulate_lhz);
 }
