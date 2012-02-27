@@ -138,6 +138,11 @@ static int kvmppc_emulate_entry(struct kvm_vcpu *vcpu, struct kvmppc_opentry *e,
 	int r = EMULATE_FAIL;
 
 	switch (e->flags & EMUL_FORM_MASK) {
+	case EMUL_FORM_D: {
+		int (*func)(struct kvm_vcpu *, int, int, int) = (void*)e->func;
+		r = func(vcpu, get_rt(inst), get_ra(inst), get_d(inst));
+		break;
+	}
 	}
 
 	if (r == EMULATE_DONE)
@@ -574,6 +579,13 @@ void __init kvmppc_emulate_register(int op, int flags, int (*func))
 	};
 
 	kvmppc_list_op[op] = entry;
+}
+
+void __init kvmppc_emulate_register_d(int op, int flags,
+		int (*func)(struct kvm_vcpu *vcpu, int rt, int ra, int d))
+{
+	flags |= EMUL_FORM_D;
+	kvmppc_emulate_register(op, flags, (void*)func);
 }
 
 void __init kvmppc_emulate_init(void)
