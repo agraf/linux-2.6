@@ -159,7 +159,7 @@ static int kvmppc_emulate_lwz(struct kvm_vcpu *vcpu, int rt, int ra, int d)
 static int kvmppc_emulate_lwzu(struct kvm_vcpu *vcpu, int rt, int ra, int d)
 {
 	int r;
-	r = kvmppc_handle_load(run, vcpu, rt, 4, 1);
+	r = kvmppc_handle_load(vcpu->run, vcpu, rt, 4, 1);
 	kvmppc_set_gpr(vcpu, ra, vcpu->arch.vaddr_accessed);
 	return r;
 }
