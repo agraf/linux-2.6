@@ -198,6 +198,15 @@ static int kvmppc_emulate_stb(struct kvm_vcpu *vcpu, int rs, int ra, int d)
 	return kvmppc_handle_store(vcpu->run, vcpu, val, 1, 1);
 }
 
+static int kvmppc_emulate_stbu(struct kvm_vcpu *vcpu, int rt, int ra, int d)
+{
+	int r;
+	ulong val = kvmppc_get_gpr(vcpu, rs);
+	r = kvmppc_handle_store(vcpu->run, vcpu, val, 1, 1);
+	kvmppc_set_gpr(vcpu, ra, vcpu->arch.vaddr_accessed);
+	return r;
+}
+
 /* XXX to do:
  * lhax
  * lhaux
@@ -491,15 +500,6 @@ int kvmppc_emulate_instruction(struct kvm_run *run, struct kvm_vcpu *vcpu)
 		}
 		break;
 
-	case OP_STBU:
-		ra = get_ra(inst);
-		rs = get_rs(inst);
-		emulated = kvmppc_handle_store(run, vcpu,
-					       kvmppc_get_gpr(vcpu, rs),
-		                               1, 1);
-		kvmppc_set_gpr(vcpu, ra, vcpu->arch.vaddr_accessed);
-		break;
-
 	case OP_LHZ:
 		rt = get_rt(inst);
 		emulated = kvmppc_handle_load(run, vcpu, rt, 2, 1);
@@ -598,4 +598,5 @@ void __init kvmppc_emulate_init(void)
 	kvmppc_emulate_register_d(OP_STW, 0, kvmppc_emulate_stw);
 	kvmppc_emulate_register_d(OP_STWU, 0, kvmppc_emulate_stwu);
 	kvmppc_emulate_register_d(OP_STB, 0, kvmppc_emulate_stb);
+	kvmppc_emulate_register_d(OP_STBU, 0, kvmppc_emulate_stbu);
 }
