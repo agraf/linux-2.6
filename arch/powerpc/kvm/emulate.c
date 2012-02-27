@@ -338,6 +338,16 @@ static int kvmppc_emulate_sthx(struct kvm_vcpu *vcpu, int rs, int ra, int rb,
 	return kvmppc_handle_store(vcpu->run, vcpu, val, 2, 1);
 }
 
+static int kvmppc_emulate_sthux(struct kvm_vcpu *vcpu, int rs, int ra, int rb,
+			       int rc)
+{
+	int r;
+	ulong val = kvmppc_get_gpr(vcpu, rs);
+	r = kvmppc_handle_store(vcpu->run, vcpu, val, 2, 1);
+	kvmppc_set_gpr(vcpu, ra, vcpu->arch.vaddr_accessed);
+	break;
+}
+
 static int kvmppc_emulate_trap(struct kvm_vcpu *vcpu, int to, int ra, int si)
 {
 #ifdef CONFIG_PPC_BOOK3S
@@ -453,17 +463,6 @@ int kvmppc_emulate_instruction(struct kvm_run *run, struct kvm_vcpu *vcpu)
 				break;
 			}
 			kvmppc_set_exit_type(vcpu, EMULATED_MFSPR_EXITS);
-			break;
-
-		case OP_31_XOP_STHUX:
-			rs = get_rs(inst);
-			ra = get_ra(inst);
-			rb = get_rb(inst);
-
-			emulated = kvmppc_handle_store(run, vcpu,
-						       kvmppc_get_gpr(vcpu, rs),
-			                               2, 1);
-			kvmppc_set_gpr(vcpu, ra, vcpu->arch.vaddr_accessed);
 			break;
 
 		case OP_31_XOP_MTSPR:
@@ -666,6 +665,8 @@ void __init kvmppc_emulate_init(void)
 				  kvmppc_emulate_lhzux);
 	kvmppc_emulate_register_x(OP_31_XOP_STHX, EMUL_FORM_X,
 				  kvmppc_emulate_sthx);
+	kvmppc_emulate_register_x(OP_31_XOP_STHUX, EMUL_FORM_X,
+				  kvmppc_emulate_sthux);
 }
 
 void __exit kvmppc_emulate_exit(void)
