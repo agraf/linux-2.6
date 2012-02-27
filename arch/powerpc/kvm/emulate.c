@@ -650,4 +650,5 @@ void __init kvmppc_emulate_init(void)
 void __exit kvmppc_emulate_exit(void)
 {
 	kfree(kvmppc_list_op);
+	kfree(kvmppc_list_op31);
 }
