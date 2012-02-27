@@ -348,6 +348,18 @@ static int kvmppc_emulate_sthux(struct kvm_vcpu *vcpu, int rs, int ra, int rb,
 	break;
 }
 
+static int kvmppc_emulate_dcbi(struct kvm_vcpu *vcpu, int rt, int ra, int rb,
+			       int rc)
+{
+	/*
+	 * Do nothing. The guest is performing dcbi because hardware DMA is not
+	 * snooped by the dcache, but emulated DMA either goes through the
+	 * dcache as normal writes, or the host kernel has handled dcache
+	 * coherence.
+	 */
+	return EMULATE_DONE;
+}
+
 static int kvmppc_emulate_trap(struct kvm_vcpu *vcpu, int to, int ra, int si)
 {
 #ifdef CONFIG_PPC_BOOK3S
@@ -510,14 +522,6 @@ int kvmppc_emulate_instruction(struct kvm_run *run, struct kvm_vcpu *vcpu)
 			kvmppc_set_exit_type(vcpu, EMULATED_MTSPR_EXITS);
 			break;
 
-		case OP_31_XOP_DCBI:
-			/* Do nothing. The guest is performing dcbi because
-			 * hardware DMA is not snooped by the dcache, but
-			 * emulated DMA either goes through the dcache as
-			 * normal writes, or the host kernel has handled dcache
-			 * coherence. */
-			break;
-
 		case OP_31_XOP_LWBRX:
 			rt = get_rt(inst);
 			emulated = kvmppc_handle_load(run, vcpu, rt, 4, 0);
@@ -667,6 +671,8 @@ void __init kvmppc_emulate_init(void)
 				  kvmppc_emulate_sthx);
 	kvmppc_emulate_register_x(OP_31_XOP_STHUX, EMUL_FORM_X,
 				  kvmppc_emulate_sthux);
+	kvmppc_emulate_register_x(OP_31_XOP_DCBI, EMUL_FORM_X,
+				  kvmppc_emulate_dcbi);
 }
 
 void __exit kvmppc_emulate_exit(void)
