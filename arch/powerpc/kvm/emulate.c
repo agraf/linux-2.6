@@ -345,7 +345,7 @@ static int kvmppc_emulate_sthux(struct kvm_vcpu *vcpu, int rs, int ra, int rb,
 	ulong val = kvmppc_get_gpr(vcpu, rs);
 	r = kvmppc_handle_store(vcpu->run, vcpu, val, 2, 1);
 	kvmppc_set_gpr(vcpu, ra, vcpu->arch.vaddr_accessed);
-	break;
+	return r;
 }
 
 static int kvmppc_emulate_dcbi(struct kvm_vcpu *vcpu, int rt, int ra, int rb,
