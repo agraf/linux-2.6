@@ -1500,6 +1500,7 @@ static int kvmppc_book3s_hv_init(void)
 
 static void kvmppc_book3s_hv_exit(void)
 {
+	kvmppc_emulate_exit();
 	kvm_exit();
 }
 

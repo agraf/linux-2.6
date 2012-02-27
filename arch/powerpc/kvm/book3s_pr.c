@@ -1254,6 +1254,7 @@ static int kvmppc_book3s_init(void)
 
 static void kvmppc_book3s_exit(void)
 {
+	kvmppc_emulate_exit();
 	kvmppc_mmu_hpte_sysexit();
 	kvm_exit();
 }

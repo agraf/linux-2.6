@@ -74,7 +74,7 @@
 #define OP_STH  44
 #define OP_STHU 45
 
-struct kvmppc_opentry kvmppc_list_op[0x40];
+struct kvmppc_opentry *kvmppc_list_op;
 
 void kvmppc_emulate_dec(struct kvm_vcpu *vcpu)
 {
@@ -593,6 +593,9 @@ void __init kvmppc_emulate_register_d(int op, int flags,
 
 void __init kvmppc_emulate_init(void)
 {
+	kvmppc_list_op = kmalloc(sizeof(struct kvmppc_opentry) * 0x40,
+				 GFP_KERNEL | GFP_ZERO);
+
 	kvmppc_emulate_register_d(OP_LWZ, 0, kvmppc_emulate_lwz);
 	kvmppc_emulate_register_d(OP_LWZU, 0, kvmppc_emulate_lwzu);
 	kvmppc_emulate_register_d(OP_LBZ, 0, kvmppc_emulate_lbz);
@@ -611,4 +614,9 @@ void __init kvmppc_emulate_init(void)
 #ifdef CONFIG_PPC_BOOK3S
 	kvmppc_emulate_register_d(OP_TRAP_64, 0, kvmppc_emulate_trap);
 #endif
+}
+
+void __exit kvmppc_emulate_exit(void)
+{
+	kfree(kvmppc_list_op);
 }
