@@ -53,10 +53,13 @@ struct kvmppc_opentry {
 
 #define EMUL_FORM_MASK		0x1f
 #define EMUL_FORM_D		0x00
+#define EMUL_FORM_X		0x02
 
 extern void kvmppc_emulate_init(void);
 extern void __init kvmppc_emulate_register_d(int op, int flags,
                 int (*func)(struct kvm_vcpu *vcpu, int rt, int ra, int d));
+extern void __init kvmppc_emulate_register_x(int op, int flags,
+	int (*func)(struct kvm_vcpu *vcpu, int rt, int ra, int rb, int rc));
 
 extern int kvmppc_vcpu_run(struct kvm_run *kvm_run, struct kvm_vcpu *vcpu);
 extern int __kvmppc_vcpu_run(struct kvm_run *kvm_run, struct kvm_vcpu *vcpu);

@@ -143,6 +143,16 @@ static int kvmppc_emulate_entry(struct kvm_vcpu *vcpu, struct kvmppc_opentry *e,
 		r = func(vcpu, get_rt(inst), get_ra(inst), get_d(inst));
 		break;
 	}
+	case EMUL_FORM_X: {
+		int (*func)(struct kvm_vcpu *, int, int, int, int);
+		func = (void*)kvmppc_list_op31[get_xop(inst)].func;
+		if (func)
+			r = func(vcpu, get_rt(inst), get_ra(inst), get_rb(inst),
+				 get_rc(inst));
+		else
+			r = EMULATE_FAIL;
+		break;
+	}
 	}
 
 	if (r == EMULATE_DONE)
@@ -591,6 +601,18 @@ void __init kvmppc_emulate_register_d(int op, int flags,
 	kvmppc_emulate_register(op, flags, (void*)func);
 }
 
+void __init kvmppc_emulate_register_x(int xop, int flags,
+	int (*func)(struct kvm_vcpu *vcpu, int rt, int ra, int rb, int rc))
+{
+	struct kvmppc_opentry entry = {
+		.flags = flags | EMUL_FORM_X,
+		.func = func,
+	};
+
+	xop &= 0x3ff;
+	kvmppc_list_op31[xop] = entry;
+}
+
 void __init kvmppc_emulate_init(void)
 {
 	kvmppc_list_op = kmalloc(sizeof(struct kvmppc_opentry) * 0x40,
@@ -614,6 +636,12 @@ void __init kvmppc_emulate_init(void)
 #ifdef CONFIG_PPC_BOOK3S
 	kvmppc_emulate_register_d(OP_TRAP_64, 0, kvmppc_emulate_trap);
 #endif
+
+	/* op31 is special in that it multiplexes */
+	kvmppc_list_op31 = kmalloc(sizeof(struct kvmppc_opentry) * 0x400,
+				   GFP_KERNEL | GFP_ZERO);
+
+	kvmppc_emulate_register(31, EMUL_FORM_X, NULL);
 }
 
 void __exit kvmppc_emulate_exit(void)
