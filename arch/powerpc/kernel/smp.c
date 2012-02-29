@@ -49,6 +49,8 @@
 #ifdef CONFIG_PPC64
 #include <asm/paca.h>
 #endif
+#include <linux/kvm_para.h>
+#include <asm/kvm_para.h>
 
 #ifdef DEBUG
 #include <asm/udbg.h>
@@ -541,7 +543,7 @@ int __cpuinit __cpu_up(unsigned int cpu)
 
 	DBG("Processor %u found.\n", cpu);
 
-	if (smp_ops->give_timebase)
+	if (!kvm_para_available() && smp_ops->give_timebase)
 		smp_ops->give_timebase();
 
 	/* Wait until cpu puts itself in the online map */
@@ -626,7 +628,7 @@ void __devinit start_secondary(void *unused)
 
 	if (smp_ops->setup_cpu)
 		smp_ops->setup_cpu(cpu);
-	if (smp_ops->take_timebase)
+	if (!kvm_para_available() && smp_ops->take_timebase)
 		smp_ops->take_timebase();
 
 	secondary_cpu_time_init();
