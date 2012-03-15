@@ -54,6 +54,7 @@ kvm-book3s_64-objs-$(CONFIG_KVM_BOOK3S_64_PR) := \
 	book3s_paired_singles.o \
 	book3s_pr.o \
 	book3s_pr_papr.o \
+	book3s_64_vio.o \
 	book3s_emulate.o \
 	book3s_interrupts.o \
 	book3s_mmu_hpte.o \
@@ -70,7 +71,7 @@ kvm-book3s_64-objs-$(CONFIG_KVM_BOOK3S_64_HV) := \
 kvm-book3s_64-builtin-objs-$(CONFIG_KVM_BOOK3S_64_HV) := \
 	book3s_hv_rmhandlers.o \
 	book3s_hv_rm_mmu.o \
-	book3s_64_vio_hv.o \
+	book3s_64_vio.o \
 	book3s_hv_builtin.o
 
 kvm-book3s_64-module-objs := \
