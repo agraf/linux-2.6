@@ -594,8 +594,8 @@ int kvmppc_emulate_instruction(struct kvm_run *run, struct kvm_vcpu *vcpu)
 		break;
 
 	default: {
-use_table:
 		struct kvmppc_opentry *e = &kvmppc_list_op[get_op(inst)];
+use_table:
 		if (e->func) {
 			return kvmppc_emulate_entry(vcpu, e, inst);
 		} else {
