@@ -446,6 +446,12 @@ static int kvmppc_emulate_trap(struct kvm_vcpu *vcpu, int to, int ra, int si)
 	return EMULATE_DONE_KEEPNIP;
 }
 
+static int kvmppc_emulate_trap_x(struct kvm_vcpu *vcpu, int rs, int ra, int rb,
+				 int rc)
+{
+	return kvmppc_emulate_trap(vcpu, rs, ra, rb);
+}
+
 static int kvmppc_spr_read_srr0(struct kvm_vcpu *vcpu, int sprn, ulong *val)
 {
 	*val = vcpu->arch.shared->srr0;
@@ -736,10 +742,10 @@ void __init kvmppc_emulate_init(void)
 	kvmppc_emulate_register_x(OP_31_XOP_STHBRX, EMUL_FORM_X,
 				  kvmppc_emulate_sthbrx);
 	kvmppc_emulate_register_x(OP_31_XOP_TRAP, EMUL_FORM_X,
-				  kvmppc_emulate_trap);
+				  kvmppc_emulate_trap_x);
 #ifdef CONFIG_64BIT
 	kvmppc_emulate_register_x(OP_31_XOP_TRAP_64, EMUL_FORM_X,
-				  kvmppc_emulate_trap);
+				  kvmppc_emulate_trap_x);
 #endif
 
 	/* SPRs multiplex on top of op31 again */
