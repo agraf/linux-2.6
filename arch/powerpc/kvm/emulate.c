@@ -541,6 +541,18 @@ static int kvmppc_spr_write_sprg2(struct kvm_vcpu *vcpu, int sprn, ulong val)
 	return EMULATE_DONE;
 }
 
+static int kvmppc_spr_read_sprg3(struct kvm_vcpu *vcpu, int sprn, ulong *val)
+{
+	*val = vcpu->arch.shared->sprg3;
+	return EMULATE_DONE;
+}
+
+static int kvmppc_spr_write_sprg3(struct kvm_vcpu *vcpu, int sprn, ulong val)
+{
+	vcpu->arch.shared->sprg3 = val;
+	return EMULATE_DONE;
+}
+
 /* XXX to do:
  * lhax
  * lhaux
@@ -581,12 +593,6 @@ int kvmppc_emulate_instruction(struct kvm_run *run, struct kvm_vcpu *vcpu)
 			rt = get_rt(inst);
 
 			switch (sprn) {
-			case SPRN_SPRG3:
-				kvmppc_set_gpr(vcpu, rt, vcpu->arch.shared->sprg3);
-				break;
-			/* Note: SPRG4-7 are user-readable, so we don't get
-			 * a trap. */
-
 			case SPRN_DEC:
 			{
 				kvmppc_set_gpr(vcpu, rt,
@@ -609,10 +615,6 @@ int kvmppc_emulate_instruction(struct kvm_run *run, struct kvm_vcpu *vcpu)
 			case SPRN_DEC:
 				vcpu->arch.dec = kvmppc_get_gpr(vcpu, rs);
 				kvmppc_emulate_dec(vcpu);
-				break;
-
-			case SPRN_SPRG3:
-				vcpu->arch.shared->sprg3 = kvmppc_get_gpr(vcpu, rs);
 				break;
 
 			default:
@@ -816,6 +818,10 @@ void __init kvmppc_emulate_init(void)
 	kvmppc_emulate_register_spr(SPRN_SPRG2, EMUL_FORM_SPR,
 				    kvmppc_spr_read_sprg2,
 				    kvmppc_spr_write_sprg2);
+	kvmppc_emulate_register_spr(SPRN_SPRG3, EMUL_FORM_SPR,
+				    kvmppc_spr_read_sprg3,
+				    kvmppc_spr_write_sprg3);
+	/* Note: SPRG4-7 are user-readable, so we don't get a trap. */
 }
 
 void __exit kvmppc_emulate_exit(void)
