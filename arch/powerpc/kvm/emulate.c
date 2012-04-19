@@ -437,20 +437,6 @@ int kvmppc_emulate_instruction(struct kvm_run *run, struct kvm_vcpu *vcpu)
 	switch (get_op(inst)) {
 	case 31:
 		switch (get_xop(inst)) {
-
-		case OP_31_XOP_TRAP:
-#ifdef CONFIG_64BIT
-		case OP_31_XOP_TRAP_64:
-#endif
-#ifdef CONFIG_PPC_BOOK3S
-			kvmppc_core_queue_program(vcpu, SRR1_PROGTRAP);
-#else
-			kvmppc_core_queue_program(vcpu,
-					vcpu->arch.shared->esr | ESR_PTR);
-#endif
-			advance = 0;
-			break;
-
 		case OP_31_XOP_MFSPR:
 			sprn = get_sprn(inst);
 			rt = get_rt(inst);
@@ -682,6 +668,12 @@ void __init kvmppc_emulate_init(void)
 				  kvmppc_emulate_lhbrx);
 	kvmppc_emulate_register_x(OP_31_XOP_STHBRX, EMUL_FORM_X,
 				  kvmppc_emulate_sthbrx);
+	kvmppc_emulate_register_x(OP_31_XOP_TRAP, EMUL_FORM_X,
+				  kvmppc_emulate_trap);
+#ifdef CONFIG_64BIT
+	kvmppc_emulate_register_x(OP_31_XOP_TRAP_64, EMUL_FORM_X,
+				  kvmppc_emulate_trap);
+#endif
 }
 
 void __exit kvmppc_emulate_exit(void)
