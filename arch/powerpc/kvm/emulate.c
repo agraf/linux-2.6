@@ -547,12 +547,12 @@ int kvmppc_emulate_instruction(struct kvm_run *run, struct kvm_vcpu *vcpu)
 			break;
 
 		default:
-			/* Attempt core-specific emulation below. */
-			emulated = EMULATE_FAIL;
+			goto use_table;
 		}
 		break;
 
 	default: {
+use_table:
 		struct kvmppc_opentry *e = &kvmppc_list_op[get_op(inst)];
 		if (e->func) {
 			return kvmppc_emulate_entry(vcpu, e, inst);
