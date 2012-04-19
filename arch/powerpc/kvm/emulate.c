@@ -172,6 +172,7 @@ static int kvmppc_emulate_mtspr(struct kvm_vcpu *vcpu, int rs, int ra, int rb,
 	int sprn = (rb << 5) | ra;
 	int (*func)(struct kvm_vcpu *, int, ulong);
 	ulong val = kvmppc_get_gpr(vcpu, rs);
+	int r;
 
 	func = (void*)kvmppc_list_spr_w[sprn].func;
 	if (func) {
@@ -190,6 +191,7 @@ static int kvmppc_emulate_mfspr(struct kvm_vcpu *vcpu, int rt, int ra, int rb,
 	int sprn = (rb << 5) | ra;
 	int (*func)(struct kvm_vcpu *, int, ulong *);
 	ulong val;
+	int r;
 
 	func = (void*)kvmppc_list_spr_r[sprn].func;
 	if (func) {
@@ -646,12 +648,12 @@ void __init kvmppc_emulate_register_spr(int sprn, int flags,
 	int (*write)(struct kvm_vcpu *vcpu, int sprn, ulong val))
 {
 	struct kvmppc_opentry entry_w = {
-		.flags = flags | EMUL_FORM_SPR_W,
+		.flags = flags | EMUL_FORM_SPR,
 		.func = (void*)write,
 	};
 
 	struct kvmppc_opentry entry_r = {
-		.flags = flags | EMUL_FORM_SPR_R,
+		.flags = flags | EMUL_FORM_SPR,
 		.func = (void*)read,
 	};
 
