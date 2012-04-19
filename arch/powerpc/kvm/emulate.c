@@ -482,6 +482,12 @@ static int kvmppc_spr_read_pvr(struct kvm_vcpu *vcpu, int sprn, ulong *val)
 	return EMULATE_DONE;
 }
 
+static int kvmppc_spr_read_pir(struct kvm_vcpu *vcpu, int sprn, ulong *val)
+{
+	*val = vcpu->vcpu_id;
+	return EMULATE_DONE;
+}
+
 /* XXX to do:
  * lhax
  * lhaux
@@ -522,8 +528,6 @@ int kvmppc_emulate_instruction(struct kvm_run *run, struct kvm_vcpu *vcpu)
 			rt = get_rt(inst);
 
 			switch (sprn) {
-			case SPRN_PIR:
-				kvmppc_set_gpr(vcpu, rt, vcpu->vcpu_id); break;
 			case SPRN_MSSSR0:
 				kvmppc_set_gpr(vcpu, rt, 0); break;
 
@@ -777,6 +781,8 @@ void __init kvmppc_emulate_init(void)
 				    kvmppc_spr_write_srr1);
 	kvmppc_emulate_register_spr(SPRN_PVR, EMUL_FORM_SPR,
 				    kvmppc_spr_read_pvr, NULL);
+	kvmppc_emulate_register_spr(SPRN_PIR, EMUL_FORM_SPR,
+				    kvmppc_spr_read_pir, NULL);
 }
 
 void __exit kvmppc_emulate_exit(void)
