@@ -444,6 +444,18 @@ static int kvmppc_emulate_trap(struct kvm_vcpu *vcpu, int to, int ra, int si)
 	return EMULATE_DONE_KEEPNIP;
 }
 
+static int kvmppc_spr_read_srr0(struct kvm_vcpu *vcpu, int sprn, ulong *val)
+{
+	*val = vcpu->arch.shared->srr0;
+	return EMULATE_DONE;
+}
+
+static int kvmppc_spr_write_srr0(struct kvm_vcpu *vcpu, int sprn, ulong val)
+{
+	vcpu->arch.shared->srr0 = val;
+	return EMULATE_DONE;
+}
+
 /* XXX to do:
  * lhax
  * lhaux
@@ -484,9 +496,6 @@ int kvmppc_emulate_instruction(struct kvm_run *run, struct kvm_vcpu *vcpu)
 			rt = get_rt(inst);
 
 			switch (sprn) {
-			case SPRN_SRR0:
-				kvmppc_set_gpr(vcpu, rt, vcpu->arch.shared->srr0);
-				break;
 			case SPRN_SRR1:
 				kvmppc_set_gpr(vcpu, rt, vcpu->arch.shared->srr1);
 				break;
@@ -539,9 +548,6 @@ int kvmppc_emulate_instruction(struct kvm_run *run, struct kvm_vcpu *vcpu)
 			sprn = get_sprn(inst);
 			rs = get_rs(inst);
 			switch (sprn) {
-			case SPRN_SRR0:
-				vcpu->arch.shared->srr0 = kvmppc_get_gpr(vcpu, rs);
-				break;
 			case SPRN_SRR1:
 				vcpu->arch.shared->srr1 = kvmppc_get_gpr(vcpu, rs);
 				break;
@@ -743,6 +749,10 @@ void __init kvmppc_emulate_init(void)
 				  kvmppc_emulate_mfspr);
 	kvmppc_emulate_register_x(OP_31_XOP_MTSPR, EMUL_FORM_X,
 				  kvmppc_emulate_mtspr);
+
+	kvmppc_emulate_register_spr(SPRN_SRR0, EMUL_FORM_SPR,
+				    kvmppc_spr_read_srr0,
+				    kvmppc_spr_write_srr0);
 }
 
 void __exit kvmppc_emulate_exit(void)
