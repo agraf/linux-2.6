@@ -464,6 +464,18 @@ static int kvmppc_spr_write_srr0(struct kvm_vcpu *vcpu, int sprn, ulong val)
 	return EMULATE_DONE;
 }
 
+static int kvmppc_spr_read_srr1(struct kvm_vcpu *vcpu, int sprn, ulong *val)
+{
+	*val = vcpu->arch.shared->srr1;
+	return EMULATE_DONE;
+}
+
+static int kvmppc_spr_write_srr1(struct kvm_vcpu *vcpu, int sprn, ulong val)
+{
+	vcpu->arch.shared->srr1 = val;
+	return EMULATE_DONE;
+}
+
 /* XXX to do:
  * lhax
  * lhaux
@@ -504,9 +516,6 @@ int kvmppc_emulate_instruction(struct kvm_run *run, struct kvm_vcpu *vcpu)
 			rt = get_rt(inst);
 
 			switch (sprn) {
-			case SPRN_SRR1:
-				kvmppc_set_gpr(vcpu, rt, vcpu->arch.shared->srr1);
-				break;
 			case SPRN_PVR:
 				kvmppc_set_gpr(vcpu, rt, vcpu->arch.pvr); break;
 			case SPRN_PIR:
@@ -556,10 +565,6 @@ int kvmppc_emulate_instruction(struct kvm_run *run, struct kvm_vcpu *vcpu)
 			sprn = get_sprn(inst);
 			rs = get_rs(inst);
 			switch (sprn) {
-			case SPRN_SRR1:
-				vcpu->arch.shared->srr1 = kvmppc_get_gpr(vcpu, rs);
-				break;
-
 			/* XXX We need to context-switch the timebase for
 			 * watchdog and FIT. */
 			case SPRN_TBWL: break;
@@ -763,6 +768,9 @@ void __init kvmppc_emulate_init(void)
 	kvmppc_emulate_register_spr(SPRN_SRR0, EMUL_FORM_SPR,
 				    kvmppc_spr_read_srr0,
 				    kvmppc_spr_write_srr0);
+	kvmppc_emulate_register_spr(SPRN_SRR1, EMUL_FORM_SPR,
+				    kvmppc_spr_read_srr1,
+				    kvmppc_spr_write_srr1);
 }
 
 void __exit kvmppc_emulate_exit(void)
