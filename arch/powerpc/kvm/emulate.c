@@ -488,6 +488,17 @@ static int kvmppc_spr_read_pir(struct kvm_vcpu *vcpu, int sprn, ulong *val)
 	return EMULATE_DONE;
 }
 
+static int kvmppc_spr_read_msssr0(struct kvm_vcpu *vcpu, int sprn, ulong *val)
+{
+	*val = 0;
+	return EMULATE_DONE;
+}
+
+static int kvmppc_spr_write_noop(struct kvm_vcpu *vcpu, int sprn, ulong val)
+{
+	return EMULATE_DONE;
+}
+
 /* XXX to do:
  * lhax
  * lhaux
@@ -528,9 +539,6 @@ int kvmppc_emulate_instruction(struct kvm_run *run, struct kvm_vcpu *vcpu)
 			rt = get_rt(inst);
 
 			switch (sprn) {
-			case SPRN_MSSSR0:
-				kvmppc_set_gpr(vcpu, rt, 0); break;
-
 			/* Note: mftb and TBRL/TBWL are user-accessible, so
 			 * the guest can always access the real TB anyways.
 			 * In fact, we probably will never see these traps. */
@@ -577,8 +585,6 @@ int kvmppc_emulate_instruction(struct kvm_run *run, struct kvm_vcpu *vcpu)
 			 * watchdog and FIT. */
 			case SPRN_TBWL: break;
 			case SPRN_TBWU: break;
-
-			case SPRN_MSSSR0: break;
 
 			case SPRN_DEC:
 				vcpu->arch.dec = kvmppc_get_gpr(vcpu, rs);
@@ -783,6 +789,9 @@ void __init kvmppc_emulate_init(void)
 				    kvmppc_spr_read_pvr, NULL);
 	kvmppc_emulate_register_spr(SPRN_PIR, EMUL_FORM_SPR,
 				    kvmppc_spr_read_pir, NULL);
+	kvmppc_emulate_register_spr(SPRN_MSSSR0, EMUL_FORM_SPR,
+				    kvmppc_spr_read_msssr0,
+				    kvmppc_spr_write_noop);
 }
 
 void __exit kvmppc_emulate_exit(void)
