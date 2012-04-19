@@ -499,6 +499,12 @@ static int kvmppc_spr_write_noop(struct kvm_vcpu *vcpu, int sprn, ulong val)
 	return EMULATE_DONE;
 }
 
+static int kvmppc_spr_write_tb(struct kvm_vcpu *vcpu, int sprn, ulong val)
+{
+	/* XXX We need to context-switch the timebase for watchdog and FIT. */
+	return EMULATE_DONE;
+}
+
 /* XXX to do:
  * lhax
  * lhaux
@@ -539,14 +545,6 @@ int kvmppc_emulate_instruction(struct kvm_run *run, struct kvm_vcpu *vcpu)
 			rt = get_rt(inst);
 
 			switch (sprn) {
-			/* Note: mftb and TBRL/TBWL are user-accessible, so
-			 * the guest can always access the real TB anyways.
-			 * In fact, we probably will never see these traps. */
-			case SPRN_TBWL:
-				kvmppc_set_gpr(vcpu, rt, get_tb() >> 32); break;
-			case SPRN_TBWU:
-				kvmppc_set_gpr(vcpu, rt, get_tb()); break;
-
 			case SPRN_SPRG0:
 				kvmppc_set_gpr(vcpu, rt, vcpu->arch.shared->sprg0);
 				break;
@@ -581,11 +579,6 @@ int kvmppc_emulate_instruction(struct kvm_run *run, struct kvm_vcpu *vcpu)
 			sprn = get_sprn(inst);
 			rs = get_rs(inst);
 			switch (sprn) {
-			/* XXX We need to context-switch the timebase for
-			 * watchdog and FIT. */
-			case SPRN_TBWL: break;
-			case SPRN_TBWU: break;
-
 			case SPRN_DEC:
 				vcpu->arch.dec = kvmppc_get_gpr(vcpu, rs);
 				kvmppc_emulate_dec(vcpu);
@@ -792,6 +785,10 @@ void __init kvmppc_emulate_init(void)
 	kvmppc_emulate_register_spr(SPRN_MSSSR0, EMUL_FORM_SPR,
 				    kvmppc_spr_read_msssr0,
 				    kvmppc_spr_write_noop);
+	kvmppc_emulate_register_spr(SPRN_TBWL, EMUL_FORM_SPR,
+				    NULL, kvmppc_spr_write_tb);
+	kvmppc_emulate_register_spr(SPRN_TBWU, EMUL_FORM_SPR,
+				    NULL, kvmppc_spr_write_tb);
 }
 
 void __exit kvmppc_emulate_exit(void)
