@@ -721,6 +721,8 @@ void __init kvmppc_emulate_init(void)
 				  kvmppc_emulate_stbx);
 	kvmppc_emulate_register_x(OP_31_XOP_STBUX, EMUL_FORM_X,
 				  kvmppc_emulate_stbux);
+	kvmppc_emulate_register_x(OP_31_XOP_LHAX, EMUL_FORM_X,
+				  kvmppc_emulate_lhax);
 	kvmppc_emulate_register_x(OP_31_XOP_LHZX, EMUL_FORM_X,
 				  kvmppc_emulate_lhzx);
 	kvmppc_emulate_register_x(OP_31_XOP_LHZUX, EMUL_FORM_X,
