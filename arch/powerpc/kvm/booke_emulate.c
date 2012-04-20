@@ -35,6 +35,15 @@ static int kvmppc_emulate_wrtee(struct kvm_vcpu *vcpu, int rs, int ra, int rb,
 	return EMULATE_DONE;
 }
 
+static int kvmppc_emulate_wrteei(struct kvm_vcpu *vcpu, int rs, int ra, int rb,
+				 int rc)
+{
+	vcpu->arch.shared->msr = (vcpu->arch.shared->msr & ~MSR_EE)
+				| (rb & get_rb(MSR_EE));
+	kvmppc_set_exit_type(vcpu, EMULATED_WRTEE_EXITS);
+	return EMULATE_DONE;
+}
+
 int kvmppc_booke_emulate_op(struct kvm_run *run, struct kvm_vcpu *vcpu,
                             unsigned int inst, int *advance)
 {
@@ -45,12 +54,6 @@ int kvmppc_booke_emulate_op(struct kvm_run *run, struct kvm_vcpu *vcpu,
 	switch (get_op(inst)) {
 	case 31:
 		switch (get_xop(inst)) {
-
-		case OP_31_XOP_WRTEEI:
-			vcpu->arch.shared->msr = (vcpu->arch.shared->msr & ~MSR_EE)
-							 | (inst & MSR_EE);
-			kvmppc_set_exit_type(vcpu, EMULATED_WRTEE_EXITS);
-			break;
 
 		default:
 			emulated = EMULATE_FAIL;
@@ -258,4 +261,6 @@ void __init kvmppc_emulate_booke_init(void)
 {
 	kvmppc_emulate_register_x(OP_31_XOP_WRTEE, EMUL_FORM_X,
 				  kvmppc_emulate_wrtee);
+	kvmppc_emulate_register_x(OP_31_XOP_WRTEEI, EMUL_FORM_X,
+				  kvmppc_emulate_wrteei);
 }
