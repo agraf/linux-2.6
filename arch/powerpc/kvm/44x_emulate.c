@@ -49,14 +49,6 @@ int kvmppc_core_emulate_op(struct kvm_run *run, struct kvm_vcpu *vcpu,
 	case 31:
 		switch (get_xop(inst)) {
 
-		case XOP_TLBSX:
-			rt = get_rt(inst);
-			ra = get_ra(inst);
-			rb = get_rb(inst);
-			rc = get_rc(inst);
-			emulated = kvmppc_44x_emul_tlbsx(vcpu, rt, ra, rb, rc);
-			break;
-
 		case XOP_ICCCI:
 			break;
 
@@ -175,9 +167,16 @@ static int kvmppc_emulate_tlbwe(struct kvm_vcpu *vcpu, int rs, int ra, int ws,
 	return kvmppc_44x_emul_tlbwe(vcpu, ra, rs, ws);
 }
 
+static int kvmppc_emulate_tlbsx(struct kvm_vcpu *vcpu, int rt, int ra, int rb,
+				int rc)
+{
+	return kvmppc_44x_emul_tlbsx(vcpu, rt, ra, rb, rc);
+}
+
 void __init kvmppc_emulate_44x_init(void)
 {
 	kvmppc_emulate_register_x(XOP_MFDCR, EMUL_FORM_X, kvmppc_emulate_mfdcr);
 	kvmppc_emulate_register_x(XOP_MTDCR, EMUL_FORM_X, kvmppc_emulate_mtdcr);
 	kvmppc_emulate_register_x(XOP_TLBWE, EMUL_FORM_X, kvmppc_emulate_tlbwe);
+	kvmppc_emulate_register_x(XOP_TLBSX, EMUL_FORM_X, kvmppc_emulate_tlbsx);
 }
