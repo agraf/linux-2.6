@@ -44,30 +44,6 @@ static int kvmppc_emulate_wrteei(struct kvm_vcpu *vcpu, int rs, int ra, int rb,
 	return EMULATE_DONE;
 }
 
-int kvmppc_booke_emulate_op(struct kvm_run *run, struct kvm_vcpu *vcpu,
-                            unsigned int inst, int *advance)
-{
-	int emulated = EMULATE_DONE;
-	int rs;
-	int rt;
-
-	switch (get_op(inst)) {
-	case 31:
-		switch (get_xop(inst)) {
-
-		default:
-			emulated = EMULATE_FAIL;
-		}
-
-		break;
-
-	default:
-		emulated = EMULATE_FAIL;
-	}
-
-	return emulated;
-}
-
 /*
  * NOTE: some of these registers are not emulated on BOOKE_HV (GS-mode).
  * Their backing store is in real registers, and these functions
