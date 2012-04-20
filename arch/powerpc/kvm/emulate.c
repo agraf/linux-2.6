@@ -834,4 +834,6 @@ void __exit kvmppc_emulate_exit(void)
 {
 	kfree(kvmppc_list_op);
 	kfree(kvmppc_list_op31);
+	kfree(kvmppc_list_spr_r);
+	kfree(kvmppc_list_spr_w);
 }
