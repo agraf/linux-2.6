@@ -179,6 +179,18 @@ static int kvmppc_spr_write_sprg6(struct kvm_vcpu *vcpu, int sprn, ulong val)
 	return EMULATE_DONE;
 }
 
+static int kvmppc_spr_read_sprg7(struct kvm_vcpu *vcpu, int sprn, ulong *val)
+{
+	*val = vcpu->arch.shared->sprg7;
+	return EMULATE_DONE;
+}
+
+static int kvmppc_spr_write_sprg7(struct kvm_vcpu *vcpu, int sprn, ulong val)
+{
+	vcpu->arch.shared->sprg7 = val;
+	return EMULATE_DONE;
+}
+
 /*
  * NOTE: some of these registers are not emulated on BOOKE_HV (GS-mode).
  * Their backing store is in real registers, and these functions
@@ -191,14 +203,6 @@ int kvmppc_booke_emulate_mtspr(struct kvm_vcpu *vcpu, int sprn, int rs)
 	ulong spr_val = kvmppc_get_gpr(vcpu, rs);
 
 	switch (sprn) {
-	/*
-	 * Note: SPRG4-7 are user-readable.
-	 * These values are loaded into the real SPRGs when resuming the
-	 * guest (PR-mode only).
-	 */
-	case SPRN_SPRG7:
-		vcpu->arch.shared->sprg7 = spr_val; break;
-
 	case SPRN_IVOR0:
 		vcpu->arch.ivor[BOOKE_IRQPRIO_CRITICAL] = spr_val;
 		break;
@@ -352,6 +356,11 @@ void __init kvmppc_emulate_booke_init(void)
 	kvmppc_emulate_register_spr(SPRN_IVPR, EMUL_FORM_SPR,
 				    kvmppc_spr_read_ivpr,
 				    kvmppc_spr_write_ivpr);
+	/*
+	 * Note: SPRG4-7 are user-readable.
+	 * These values are loaded into the real SPRGs when resuming the
+	 * guest (PR-mode only).
+	 */
 	kvmppc_emulate_register_spr(SPRN_SPRG4, EMUL_FORM_SPR,
 				    kvmppc_spr_read_sprg4,
 				    kvmppc_spr_write_sprg4);
@@ -361,4 +370,7 @@ void __init kvmppc_emulate_booke_init(void)
 	kvmppc_emulate_register_spr(SPRN_SPRG6, EMUL_FORM_SPR,
 				    kvmppc_spr_read_sprg6,
 				    kvmppc_spr_write_sprg6);
+	kvmppc_emulate_register_spr(SPRN_SPRG7, EMUL_FORM_SPR,
+				    kvmppc_spr_read_sprg7,
+				    kvmppc_spr_write_sprg7);
 }
