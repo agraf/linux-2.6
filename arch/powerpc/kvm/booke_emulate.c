@@ -44,6 +44,18 @@ static int kvmppc_emulate_wrteei(struct kvm_vcpu *vcpu, int rs, int ra, int rb,
 	return EMULATE_DONE;
 }
 
+static int kvmppc_spr_read_dear(struct kvm_vcpu *vcpu, int sprn, ulong *val)
+{
+	*val = vcpu->arch.shared->dar;
+	return EMULATE_DONE;
+}
+
+static int kvmppc_spr_write_dear(struct kvm_vcpu *vcpu, int sprn, ulong val)
+{
+	vcpu->arch.shared->dar = val;
+	return EMULATE_DONE;
+}
+
 /*
  * NOTE: some of these registers are not emulated on BOOKE_HV (GS-mode).
  * Their backing store is in real registers, and these functions
@@ -56,8 +68,6 @@ int kvmppc_booke_emulate_mtspr(struct kvm_vcpu *vcpu, int sprn, int rs)
 	ulong spr_val = kvmppc_get_gpr(vcpu, rs);
 
 	switch (sprn) {
-	case SPRN_DEAR:
-		vcpu->arch.shared->dar = spr_val; break;
 	case SPRN_ESR:
 		vcpu->arch.shared->esr = spr_val; break;
 	case SPRN_DBCR0:
@@ -162,8 +172,6 @@ int kvmppc_booke_emulate_mfspr(struct kvm_vcpu *vcpu, int sprn, int rt)
 	switch (sprn) {
 	case SPRN_IVPR:
 		kvmppc_set_gpr(vcpu, rt, vcpu->arch.ivpr); break;
-	case SPRN_DEAR:
-		kvmppc_set_gpr(vcpu, rt, vcpu->arch.shared->dar); break;
 	case SPRN_ESR:
 		kvmppc_set_gpr(vcpu, rt, vcpu->arch.shared->esr); break;
 	case SPRN_DBCR0:
@@ -239,4 +247,7 @@ void __init kvmppc_emulate_booke_init(void)
 				  kvmppc_emulate_wrtee);
 	kvmppc_emulate_register_x(OP_31_XOP_WRTEEI, EMUL_FORM_X,
 				  kvmppc_emulate_wrteei);
+	kvmppc_emulate_register_spr(SPRN_DEAR, EMUL_FORM_SPR,
+				    kvmppc_spr_read_dear,
+				    kvmppc_spr_write_dear);
 }
