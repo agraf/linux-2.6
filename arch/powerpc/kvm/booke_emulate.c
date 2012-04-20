@@ -287,3 +287,7 @@ int kvmppc_booke_emulate_mfspr(struct kvm_vcpu *vcpu, int sprn, int rt)
 
 	return emulated;
 }
+
+void __init kvmppc_emulate_booke_init(void)
+{
+}

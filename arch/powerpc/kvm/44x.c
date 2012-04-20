@@ -181,6 +181,7 @@ static int __init kvmppc_44x_init(void)
 		return r;
 
 	kvmppc_emulate_init();
+	kvmppc_emulate_booke_init();
 
 	return kvm_init(NULL, sizeof(struct kvmppc_vcpu_44x), 0, THIS_MODULE);
 }
