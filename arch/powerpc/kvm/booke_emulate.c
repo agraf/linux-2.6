@@ -23,7 +23,6 @@
 
 #include "booke.h"
 
-#define OP_31_XOP_MFMSR   83
 #define OP_31_XOP_WRTEE   131
 #define OP_31_XOP_MTMSR   146
 #define OP_31_XOP_WRTEEI  163
@@ -38,12 +37,6 @@ int kvmppc_booke_emulate_op(struct kvm_run *run, struct kvm_vcpu *vcpu,
 	switch (get_op(inst)) {
 	case 31:
 		switch (get_xop(inst)) {
-
-		case OP_31_XOP_MFMSR:
-			rt = get_rt(inst);
-			kvmppc_set_gpr(vcpu, rt, vcpu->arch.shared->msr);
-			kvmppc_set_exit_type(vcpu, EMULATED_MFMSR_EXITS);
-			break;
 
 		case OP_31_XOP_MTMSR:
 			rs = get_rs(inst);

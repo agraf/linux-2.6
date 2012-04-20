@@ -43,6 +43,7 @@
 #define OP_31_XOP_TRAP      4
 #define OP_31_XOP_LWZX      23
 #define OP_31_XOP_TRAP_64   68
+#define OP_31_XOP_MFMSR     83
 #define OP_31_XOP_LBZX      87
 #define OP_31_XOP_STWX      151
 #define OP_31_XOP_STBX      215
@@ -455,6 +456,14 @@ static int kvmppc_emulate_trap_x(struct kvm_vcpu *vcpu, int rs, int ra, int rb,
 	return kvmppc_emulate_trap(vcpu, rs, ra, rb);
 }
 
+static int kvmppc_emulate_mfmsr(struct kvm_vcpu *vcpu, int rt, int ra, int rb,
+				 int rc)
+{
+	kvmppc_set_gpr(vcpu, rt, vcpu->arch.shared->msr);
+	kvmppc_set_exit_type(vcpu, EMULATED_MFMSR_EXITS);
+	return EMULATE_DONE;
+}
+
 static int kvmppc_emulate_19(struct kvm_vcpu *vcpu, int rt, int ra, int d)
 {
 	ulong srr1 = vcpu->arch.shared->srr1;
@@ -806,6 +815,8 @@ void __init kvmppc_emulate_init(void)
 	kvmppc_emulate_register_x(OP_31_XOP_TRAP_64, EMUL_FORM_X,
 				  kvmppc_emulate_trap_x);
 #endif
+	kvmppc_emulate_register_x(OP_31_XOP_MFMSR, EMUL_FORM_X,
+				  kvmppc_emulate_mfmsr);
 
 	/* SPRs multiplex on top of op31 again */
 	kvmppc_list_spr_r = kzalloc(sizeof(struct kvmppc_opentry) * 0x400,

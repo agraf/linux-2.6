@@ -23,7 +23,6 @@
 #include <asm/reg.h>
 #include <asm/switch_to.h>
 
-#define OP_31_XOP_MFMSR		83
 #define OP_31_XOP_MTMSR		146
 #define OP_31_XOP_MTMSRD	178
 #define OP_31_XOP_MTSR		210
@@ -88,10 +87,6 @@ int kvmppc_core_emulate_op(struct kvm_run *run, struct kvm_vcpu *vcpu,
 	switch (get_op(inst)) {
 	case 31:
 		switch (get_xop(inst)) {
-		case OP_31_XOP_MFMSR:
-			kvmppc_set_gpr(vcpu, get_rt(inst),
-				       vcpu->arch.shared->msr);
-			break;
 		case OP_31_XOP_MTMSRD:
 		{
 			ulong rs = kvmppc_get_gpr(vcpu, get_rs(inst));
