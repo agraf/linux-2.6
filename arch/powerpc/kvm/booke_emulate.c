@@ -155,6 +155,18 @@ static int kvmppc_spr_write_sprg4(struct kvm_vcpu *vcpu, int sprn, ulong val)
 	return EMULATE_DONE;
 }
 
+static int kvmppc_spr_read_sprg5(struct kvm_vcpu *vcpu, int sprn, ulong *val)
+{
+	*val = vcpu->arch.shared->sprg5;
+	return EMULATE_DONE;
+}
+
+static int kvmppc_spr_write_sprg5(struct kvm_vcpu *vcpu, int sprn, ulong val)
+{
+	vcpu->arch.shared->sprg5 = val;
+	return EMULATE_DONE;
+}
+
 /*
  * NOTE: some of these registers are not emulated on BOOKE_HV (GS-mode).
  * Their backing store is in real registers, and these functions
@@ -172,8 +184,6 @@ int kvmppc_booke_emulate_mtspr(struct kvm_vcpu *vcpu, int sprn, int rs)
 	 * These values are loaded into the real SPRGs when resuming the
 	 * guest (PR-mode only).
 	 */
-	case SPRN_SPRG5:
-		vcpu->arch.shared->sprg5 = spr_val; break;
 	case SPRN_SPRG6:
 		vcpu->arch.shared->sprg6 = spr_val; break;
 	case SPRN_SPRG7:
@@ -335,4 +345,7 @@ void __init kvmppc_emulate_booke_init(void)
 	kvmppc_emulate_register_spr(SPRN_SPRG4, EMUL_FORM_SPR,
 				    kvmppc_spr_read_sprg4,
 				    kvmppc_spr_write_sprg4);
+	kvmppc_emulate_register_spr(SPRN_SPRG5, EMUL_FORM_SPR,
+				    kvmppc_spr_read_sprg5,
+				    kvmppc_spr_write_sprg5);
 }
