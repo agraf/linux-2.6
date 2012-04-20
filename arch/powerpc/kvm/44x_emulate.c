@@ -49,44 +49,6 @@ int kvmppc_core_emulate_op(struct kvm_run *run, struct kvm_vcpu *vcpu,
 	case 31:
 		switch (get_xop(inst)) {
 
-		case XOP_MFDCR:
-			dcrn = get_dcrn(inst);
-			rt = get_rt(inst);
-
-			/* The guest may access CPR0 registers to determine the timebase
-			 * frequency, and it must know the real host frequency because it
-			 * can directly access the timebase registers.
-			 *
-			 * It would be possible to emulate those accesses in userspace,
-			 * but userspace can really only figure out the end frequency.
-			 * We could decompose that into the factors that compute it, but
-			 * that's tricky math, and it's easier to just report the real
-			 * CPR0 values.
-			 */
-			switch (dcrn) {
-			case DCRN_CPR0_CONFIG_ADDR:
-				kvmppc_set_gpr(vcpu, rt, vcpu->arch.cpr0_cfgaddr);
-				break;
-			case DCRN_CPR0_CONFIG_DATA:
-				local_irq_disable();
-				mtdcr(DCRN_CPR0_CONFIG_ADDR,
-					  vcpu->arch.cpr0_cfgaddr);
-				kvmppc_set_gpr(vcpu, rt,
-					       mfdcr(DCRN_CPR0_CONFIG_DATA));
-				local_irq_enable();
-				break;
-			default:
-				run->dcr.dcrn = dcrn;
-				run->dcr.data =  0;
-				run->dcr.is_write = 0;
-				vcpu->arch.io_gpr = rt;
-				vcpu->arch.dcr_needed = 1;
-				kvmppc_account_exit(vcpu, DCR_EXITS);
-				emulated = EMULATE_DO_DCR;
-			}
-
-			break;
-
 		case XOP_MTDCR:
 			dcrn = get_dcrn(inst);
 			rs = get_rs(inst);
@@ -174,6 +136,45 @@ int kvmppc_core_emulate_mfspr(struct kvm_vcpu *vcpu, int sprn, int rt)
 	return emulated;
 }
 
+static int kvmppc_emulate_mfdcr(struct kvm_vcpu *vcpu, int rt, int ra, int rb,
+				int rc)
+{
+	int dcrn = (rb << 5) | ra;
+
+	/* The guest may access CPR0 registers to determine the timebase
+	 * frequency, and it must know the real host frequency because it
+	 * can directly access the timebase registers.
+	 *
+	 * It would be possible to emulate those accesses in userspace,
+	 * but userspace can really only figure out the end frequency.
+	 * We could decompose that into the factors that compute it, but
+	 * that's tricky math, and it's easier to just report the real
+	 * CPR0 values.
+	 */
+	switch (dcrn) {
+	case DCRN_CPR0_CONFIG_ADDR:
+		kvmppc_set_gpr(vcpu, rt, vcpu->arch.cpr0_cfgaddr);
+		break;
+	case DCRN_CPR0_CONFIG_DATA:
+		local_irq_disable();
+		mtdcr(DCRN_CPR0_CONFIG_ADDR, vcpu->arch.cpr0_cfgaddr);
+		kvmppc_set_gpr(vcpu, rt, mfdcr(DCRN_CPR0_CONFIG_DATA));
+		local_irq_enable();
+		break;
+	default:
+		vcpu->run->dcr.dcrn = dcrn;
+		vcpu->run->dcr.data =  0;
+		vcpu->run->dcr.is_write = 0;
+		vcpu->arch.io_gpr = rt;
+		vcpu->arch.dcr_needed = 1;
+		kvmppc_account_exit(vcpu, DCR_EXITS);
+		return EMULATE_DO_DCR;
+	}
+
+	return EMULATE_DONE;
+}
+
 void __init kvmppc_emulate_44x_init(void)
 {
+	kvmppc_emulate_register_x(XOP_MFDCR, EMUL_FORM_X, kvmppc_emulate_mfdcr);
 }
