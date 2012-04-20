@@ -92,6 +92,18 @@ static int kvmppc_spr_write_dbcr1(struct kvm_vcpu *vcpu, int sprn, ulong val)
 	return EMULATE_DONE;
 }
 
+static int kvmppc_spr_read_dbsr(struct kvm_vcpu *vcpu, int sprn, ulong *val)
+{
+	*val = vcpu->arch.dbsr;
+	return EMULATE_DONE;
+}
+
+static int kvmppc_spr_write_dbsr(struct kvm_vcpu *vcpu, int sprn, ulong val)
+{
+	vcpu->arch.dbsr &= ~val;
+	return EMULATE_DONE;
+}
+
 /*
  * NOTE: some of these registers are not emulated on BOOKE_HV (GS-mode).
  * Their backing store is in real registers, and these functions
@@ -104,8 +116,6 @@ int kvmppc_booke_emulate_mtspr(struct kvm_vcpu *vcpu, int sprn, int rs)
 	ulong spr_val = kvmppc_get_gpr(vcpu, rs);
 
 	switch (sprn) {
-	case SPRN_DBSR:
-		vcpu->arch.dbsr &= ~spr_val; break;
 	case SPRN_TSR:
 		kvmppc_clr_tsr_bits(vcpu, spr_val);
 		break;
@@ -202,8 +212,6 @@ int kvmppc_booke_emulate_mfspr(struct kvm_vcpu *vcpu, int sprn, int rt)
 	switch (sprn) {
 	case SPRN_IVPR:
 		kvmppc_set_gpr(vcpu, rt, vcpu->arch.ivpr); break;
-	case SPRN_DBSR:
-		kvmppc_set_gpr(vcpu, rt, vcpu->arch.dbsr); break;
 	case SPRN_TSR:
 		kvmppc_set_gpr(vcpu, rt, vcpu->arch.tsr); break;
 	case SPRN_TCR:
@@ -283,4 +291,7 @@ void __init kvmppc_emulate_booke_init(void)
 	kvmppc_emulate_register_spr(SPRN_DBCR1, EMUL_FORM_SPR,
 				    kvmppc_spr_read_dbcr1,
 				    kvmppc_spr_write_dbcr1);
+	kvmppc_emulate_register_spr(SPRN_DBSR, EMUL_FORM_SPR,
+				    kvmppc_spr_read_dbsr,
+				    kvmppc_spr_write_dbsr);
 }
