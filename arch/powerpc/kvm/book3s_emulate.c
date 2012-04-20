@@ -23,7 +23,6 @@
 #include <asm/reg.h>
 #include <asm/switch_to.h>
 
-#define OP_31_XOP_MTMSR		146
 #define OP_31_XOP_MTMSRD	178
 #define OP_31_XOP_MTSR		210
 #define OP_31_XOP_MTSRIN	242
@@ -97,9 +96,6 @@ int kvmppc_core_emulate_op(struct kvm_run *run, struct kvm_vcpu *vcpu,
 				kvmppc_set_msr(vcpu, rs);
 			break;
 		}
-		case OP_31_XOP_MTMSR:
-			kvmppc_set_msr(vcpu, kvmppc_get_gpr(vcpu, get_rs(inst)));
-			break;
 		case OP_31_XOP_MFSR:
 		{
 			int srnum;
