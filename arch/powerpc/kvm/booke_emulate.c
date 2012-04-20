@@ -191,6 +191,55 @@ static int kvmppc_spr_write_sprg7(struct kvm_vcpu *vcpu, int sprn, ulong val)
 	return EMULATE_DONE;
 }
 
+static const int ivor2irqprio[] = {
+	BOOKE_IRQPRIO_CRITICAL,
+	BOOKE_IRQPRIO_MACHINE_CHECK,
+	BOOKE_IRQPRIO_DATA_STORAGE,
+	BOOKE_IRQPRIO_INST_STORAGE,
+	BOOKE_IRQPRIO_EXTERNAL,
+	BOOKE_IRQPRIO_ALIGNMENT,
+	BOOKE_IRQPRIO_PROGRAM,
+	BOOKE_IRQPRIO_FP_UNAVAIL,
+	BOOKE_IRQPRIO_SYSCALL,
+	BOOKE_IRQPRIO_AP_UNAVAIL,
+	BOOKE_IRQPRIO_DECREMENTER,
+	BOOKE_IRQPRIO_FIT,
+	BOOKE_IRQPRIO_WATCHDOG,
+	BOOKE_IRQPRIO_DTLB_MISS,
+	BOOKE_IRQPRIO_ITLB_MISS,
+	BOOKE_IRQPRIO_DEBUG
+};
+
+static int kvmppc_spr_read_ivor0_15(struct kvm_vcpu *vcpu, int sprn, ulong *val)
+{
+	*val = vcpu->arch.ivor[ivor2irqprio[sprn - SPRN_IVOR0]];
+	return EMULATE_DONE;
+}
+
+static int kvmppc_spr_write_ivor0_15(struct kvm_vcpu *vcpu, int sprn, ulong val)
+{
+	vcpu->arch.ivor[ivor2irqprio[sprn - SPRN_IVOR0]] = val;
+	return EMULATE_DONE;
+}
+
+static int kvmppc_spr_write_ivor2(struct kvm_vcpu *vcpu, int sprn, ulong val)
+{
+	vcpu->arch.ivor[BOOKE_IRQPRIO_DATA_STORAGE] = val;
+#ifdef CONFIG_KVM_BOOKE_HV
+	mtspr(SPRN_GIVOR2, spr_val);
+#endif
+	return EMULATE_DONE;
+}
+
+static int kvmppc_spr_write_ivor8(struct kvm_vcpu *vcpu, int sprn, ulong val)
+{
+	vcpu->arch.ivor[BOOKE_IRQPRIO_SYSCALL] = val;
+#ifdef CONFIG_KVM_BOOKE_HV
+	mtspr(SPRN_GIVOR8, spr_val);
+#endif
+	return EMULATE_DONE;
+}
+
 /*
  * NOTE: some of these registers are not emulated on BOOKE_HV (GS-mode).
  * Their backing store is in real registers, and these functions
@@ -203,60 +252,6 @@ int kvmppc_booke_emulate_mtspr(struct kvm_vcpu *vcpu, int sprn, int rs)
 	ulong spr_val = kvmppc_get_gpr(vcpu, rs);
 
 	switch (sprn) {
-	case SPRN_IVOR0:
-		vcpu->arch.ivor[BOOKE_IRQPRIO_CRITICAL] = spr_val;
-		break;
-	case SPRN_IVOR1:
-		vcpu->arch.ivor[BOOKE_IRQPRIO_MACHINE_CHECK] = spr_val;
-		break;
-	case SPRN_IVOR2:
-		vcpu->arch.ivor[BOOKE_IRQPRIO_DATA_STORAGE] = spr_val;
-#ifdef CONFIG_KVM_BOOKE_HV
-		mtspr(SPRN_GIVOR2, spr_val);
-#endif
-		break;
-	case SPRN_IVOR3:
-		vcpu->arch.ivor[BOOKE_IRQPRIO_INST_STORAGE] = spr_val;
-		break;
-	case SPRN_IVOR4:
-		vcpu->arch.ivor[BOOKE_IRQPRIO_EXTERNAL] = spr_val;
-		break;
-	case SPRN_IVOR5:
-		vcpu->arch.ivor[BOOKE_IRQPRIO_ALIGNMENT] = spr_val;
-		break;
-	case SPRN_IVOR6:
-		vcpu->arch.ivor[BOOKE_IRQPRIO_PROGRAM] = spr_val;
-		break;
-	case SPRN_IVOR7:
-		vcpu->arch.ivor[BOOKE_IRQPRIO_FP_UNAVAIL] = spr_val;
-		break;
-	case SPRN_IVOR8:
-		vcpu->arch.ivor[BOOKE_IRQPRIO_SYSCALL] = spr_val;
-#ifdef CONFIG_KVM_BOOKE_HV
-		mtspr(SPRN_GIVOR8, spr_val);
-#endif
-		break;
-	case SPRN_IVOR9:
-		vcpu->arch.ivor[BOOKE_IRQPRIO_AP_UNAVAIL] = spr_val;
-		break;
-	case SPRN_IVOR10:
-		vcpu->arch.ivor[BOOKE_IRQPRIO_DECREMENTER] = spr_val;
-		break;
-	case SPRN_IVOR11:
-		vcpu->arch.ivor[BOOKE_IRQPRIO_FIT] = spr_val;
-		break;
-	case SPRN_IVOR12:
-		vcpu->arch.ivor[BOOKE_IRQPRIO_WATCHDOG] = spr_val;
-		break;
-	case SPRN_IVOR13:
-		vcpu->arch.ivor[BOOKE_IRQPRIO_DTLB_MISS] = spr_val;
-		break;
-	case SPRN_IVOR14:
-		vcpu->arch.ivor[BOOKE_IRQPRIO_ITLB_MISS] = spr_val;
-		break;
-	case SPRN_IVOR15:
-		vcpu->arch.ivor[BOOKE_IRQPRIO_DEBUG] = spr_val;
-		break;
 
 	default:
 		emulated = EMULATE_FAIL;
@@ -270,54 +265,6 @@ int kvmppc_booke_emulate_mfspr(struct kvm_vcpu *vcpu, int sprn, int rt)
 	int emulated = EMULATE_DONE;
 
 	switch (sprn) {
-	case SPRN_IVOR0:
-		kvmppc_set_gpr(vcpu, rt, vcpu->arch.ivor[BOOKE_IRQPRIO_CRITICAL]);
-		break;
-	case SPRN_IVOR1:
-		kvmppc_set_gpr(vcpu, rt, vcpu->arch.ivor[BOOKE_IRQPRIO_MACHINE_CHECK]);
-		break;
-	case SPRN_IVOR2:
-		kvmppc_set_gpr(vcpu, rt, vcpu->arch.ivor[BOOKE_IRQPRIO_DATA_STORAGE]);
-		break;
-	case SPRN_IVOR3:
-		kvmppc_set_gpr(vcpu, rt, vcpu->arch.ivor[BOOKE_IRQPRIO_INST_STORAGE]);
-		break;
-	case SPRN_IVOR4:
-		kvmppc_set_gpr(vcpu, rt, vcpu->arch.ivor[BOOKE_IRQPRIO_EXTERNAL]);
-		break;
-	case SPRN_IVOR5:
-		kvmppc_set_gpr(vcpu, rt, vcpu->arch.ivor[BOOKE_IRQPRIO_ALIGNMENT]);
-		break;
-	case SPRN_IVOR6:
-		kvmppc_set_gpr(vcpu, rt, vcpu->arch.ivor[BOOKE_IRQPRIO_PROGRAM]);
-		break;
-	case SPRN_IVOR7:
-		kvmppc_set_gpr(vcpu, rt, vcpu->arch.ivor[BOOKE_IRQPRIO_FP_UNAVAIL]);
-		break;
-	case SPRN_IVOR8:
-		kvmppc_set_gpr(vcpu, rt, vcpu->arch.ivor[BOOKE_IRQPRIO_SYSCALL]);
-		break;
-	case SPRN_IVOR9:
-		kvmppc_set_gpr(vcpu, rt, vcpu->arch.ivor[BOOKE_IRQPRIO_AP_UNAVAIL]);
-		break;
-	case SPRN_IVOR10:
-		kvmppc_set_gpr(vcpu, rt, vcpu->arch.ivor[BOOKE_IRQPRIO_DECREMENTER]);
-		break;
-	case SPRN_IVOR11:
-		kvmppc_set_gpr(vcpu, rt, vcpu->arch.ivor[BOOKE_IRQPRIO_FIT]);
-		break;
-	case SPRN_IVOR12:
-		kvmppc_set_gpr(vcpu, rt, vcpu->arch.ivor[BOOKE_IRQPRIO_WATCHDOG]);
-		break;
-	case SPRN_IVOR13:
-		kvmppc_set_gpr(vcpu, rt, vcpu->arch.ivor[BOOKE_IRQPRIO_DTLB_MISS]);
-		break;
-	case SPRN_IVOR14:
-		kvmppc_set_gpr(vcpu, rt, vcpu->arch.ivor[BOOKE_IRQPRIO_ITLB_MISS]);
-		break;
-	case SPRN_IVOR15:
-		kvmppc_set_gpr(vcpu, rt, vcpu->arch.ivor[BOOKE_IRQPRIO_DEBUG]);
-		break;
 
 	default:
 		emulated = EMULATE_FAIL;
@@ -373,4 +320,53 @@ void __init kvmppc_emulate_booke_init(void)
 	kvmppc_emulate_register_spr(SPRN_SPRG7, EMUL_FORM_SPR,
 				    kvmppc_spr_read_sprg7,
 				    kvmppc_spr_write_sprg7);
+
+	kvmppc_emulate_register_spr(SPRN_IVOR0, EMUL_FORM_SPR,
+				    kvmppc_spr_read_ivor0_15,
+				    kvmppc_spr_write_ivor0_15);
+	kvmppc_emulate_register_spr(SPRN_IVOR1, EMUL_FORM_SPR,
+				    kvmppc_spr_read_ivor0_15,
+				    kvmppc_spr_write_ivor0_15);
+	kvmppc_emulate_register_spr(SPRN_IVOR2, EMUL_FORM_SPR,
+				    kvmppc_spr_read_ivor0_15,
+				    kvmppc_spr_write_ivor2);
+	kvmppc_emulate_register_spr(SPRN_IVOR3, EMUL_FORM_SPR,
+				    kvmppc_spr_read_ivor0_15,
+				    kvmppc_spr_write_ivor0_15);
+	kvmppc_emulate_register_spr(SPRN_IVOR4, EMUL_FORM_SPR,
+				    kvmppc_spr_read_ivor0_15,
+				    kvmppc_spr_write_ivor0_15);
+	kvmppc_emulate_register_spr(SPRN_IVOR5, EMUL_FORM_SPR,
+				    kvmppc_spr_read_ivor0_15,
+				    kvmppc_spr_write_ivor0_15);
+	kvmppc_emulate_register_spr(SPRN_IVOR6, EMUL_FORM_SPR,
+				    kvmppc_spr_read_ivor0_15,
+				    kvmppc_spr_write_ivor0_15);
+	kvmppc_emulate_register_spr(SPRN_IVOR7, EMUL_FORM_SPR,
+				    kvmppc_spr_read_ivor0_15,
+				    kvmppc_spr_write_ivor0_15);
+	kvmppc_emulate_register_spr(SPRN_IVOR8, EMUL_FORM_SPR,
+				    kvmppc_spr_read_ivor0_15,
+				    kvmppc_spr_write_ivor8);
+	kvmppc_emulate_register_spr(SPRN_IVOR9, EMUL_FORM_SPR,
+				    kvmppc_spr_read_ivor0_15,
+				    kvmppc_spr_write_ivor0_15);
+	kvmppc_emulate_register_spr(SPRN_IVOR10, EMUL_FORM_SPR,
+				    kvmppc_spr_read_ivor0_15,
+				    kvmppc_spr_write_ivor0_15);
+	kvmppc_emulate_register_spr(SPRN_IVOR11, EMUL_FORM_SPR,
+				    kvmppc_spr_read_ivor0_15,
+				    kvmppc_spr_write_ivor0_15);
+	kvmppc_emulate_register_spr(SPRN_IVOR12, EMUL_FORM_SPR,
+				    kvmppc_spr_read_ivor0_15,
+				    kvmppc_spr_write_ivor0_15);
+	kvmppc_emulate_register_spr(SPRN_IVOR13, EMUL_FORM_SPR,
+				    kvmppc_spr_read_ivor0_15,
+				    kvmppc_spr_write_ivor0_15);
+	kvmppc_emulate_register_spr(SPRN_IVOR14, EMUL_FORM_SPR,
+				    kvmppc_spr_read_ivor0_15,
+				    kvmppc_spr_write_ivor0_15);
+	kvmppc_emulate_register_spr(SPRN_IVOR15, EMUL_FORM_SPR,
+				    kvmppc_spr_read_ivor0_15,
+				    kvmppc_spr_write_ivor0_15);
 }
