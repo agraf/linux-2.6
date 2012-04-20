@@ -240,41 +240,14 @@ static int kvmppc_spr_write_ivor8(struct kvm_vcpu *vcpu, int sprn, ulong val)
 	return EMULATE_DONE;
 }
 
-/*
- * NOTE: some of these registers are not emulated on BOOKE_HV (GS-mode).
- * Their backing store is in real registers, and these functions
- * will return the wrong result if called for them in another context
- * (such as debugging).
- */
-int kvmppc_booke_emulate_mtspr(struct kvm_vcpu *vcpu, int sprn, int rs)
-{
-	int emulated = EMULATE_DONE;
-	ulong spr_val = kvmppc_get_gpr(vcpu, rs);
-
-	switch (sprn) {
-
-	default:
-		emulated = EMULATE_FAIL;
-	}
-
-	return emulated;
-}
-
-int kvmppc_booke_emulate_mfspr(struct kvm_vcpu *vcpu, int sprn, int rt)
-{
-	int emulated = EMULATE_DONE;
-
-	switch (sprn) {
-
-	default:
-		emulated = EMULATE_FAIL;
-	}
-
-	return emulated;
-}
-
 void __init kvmppc_emulate_booke_init(void)
 {
+	/*
+	 * NOTE: some of these registers are not emulated on BOOKE_HV (GS-mode).
+	 * Their backing store is in real registers, and these functions
+	 * will return the wrong result if called for them in another context
+	 * (such as debugging).
+	 */
 	kvmppc_emulate_register_x(OP_31_XOP_WRTEE, EMUL_FORM_X,
 				  kvmppc_emulate_wrtee);
 	kvmppc_emulate_register_x(OP_31_XOP_WRTEEI, EMUL_FORM_X,
