@@ -37,6 +37,9 @@
 #define OP_TRAP 3
 #define OP_TRAP_64 2
 
+#define OP_19_XOP_RFID      18
+#define OP_19_XOP_RFI       50
+
 #define OP_31_XOP_TRAP      4
 #define OP_31_XOP_LWZX      23
 #define OP_31_XOP_TRAP_64   68
@@ -452,6 +455,24 @@ static int kvmppc_emulate_trap_x(struct kvm_vcpu *vcpu, int rs, int ra, int rb,
 	return kvmppc_emulate_trap(vcpu, rs, ra, rb);
 }
 
+static int kvmppc_emulate_19(struct kvm_vcpu *vcpu, int rt, int ra, int d)
+{
+	ulong srr1 = vcpu->arch.shared->srr1;
+
+	switch (get_xop(d)) {
+		case OP_19_XOP_RFI:
+#ifdef CONFIG_PPC_BOOK3S_64
+		case OP_19_XOP_RFID:
+#endif
+			kvmppc_set_pc(vcpu, vcpu->arch.shared->srr0);
+			kvmppc_set_msr(vcpu, srr1);
+			kvmppc_set_exit_type(vcpu, EMULATED_RFI_EXITS);
+			return EMULATE_DONE_KEEPNIP;
+		default:
+	}
+	return EMULATE_FAIL;
+}
+
 static int kvmppc_spr_read_srr0(struct kvm_vcpu *vcpu, int sprn, ulong *val)
 {
 	*val = vcpu->arch.shared->srr0;
@@ -738,6 +759,7 @@ void __init kvmppc_emulate_init(void)
 #ifdef CONFIG_PPC_BOOK3S
 	kvmppc_emulate_register_d(OP_TRAP_64, 0, kvmppc_emulate_trap);
 #endif
+	kvmppc_emulate_register_d(19, 0, kvmppc_emulate_19);
 
 	/* op31 is special in that it multiplexes */
 	kvmppc_list_op31 = kmalloc(sizeof(struct kvmppc_opentry) * 0x400,

@@ -23,9 +23,6 @@
 #include <asm/reg.h>
 #include <asm/switch_to.h>
 
-#define OP_19_XOP_RFID		18
-#define OP_19_XOP_RFI		50
-
 #define OP_31_XOP_MFMSR		83
 #define OP_31_XOP_MTMSR		146
 #define OP_31_XOP_MTMSRD	178
@@ -89,20 +86,6 @@ int kvmppc_core_emulate_op(struct kvm_run *run, struct kvm_vcpu *vcpu,
 	int emulated = EMULATE_DONE;
 
 	switch (get_op(inst)) {
-	case 19:
-		switch (get_xop(inst)) {
-		case OP_19_XOP_RFID:
-		case OP_19_XOP_RFI:
-			kvmppc_set_pc(vcpu, vcpu->arch.shared->srr0);
-			kvmppc_set_msr(vcpu, vcpu->arch.shared->srr1);
-			*advance = 0;
-			break;
-
-		default:
-			emulated = EMULATE_FAIL;
-			break;
-		}
-		break;
 	case 31:
 		switch (get_xop(inst)) {
 		case OP_31_XOP_MFMSR:

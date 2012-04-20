@@ -23,18 +23,10 @@
 
 #include "booke.h"
 
-#define OP_19_XOP_RFI     50
-
 #define OP_31_XOP_MFMSR   83
 #define OP_31_XOP_WRTEE   131
 #define OP_31_XOP_MTMSR   146
 #define OP_31_XOP_WRTEEI  163
-
-static void kvmppc_emul_rfi(struct kvm_vcpu *vcpu)
-{
-	vcpu->arch.pc = vcpu->arch.shared->srr0;
-	kvmppc_set_msr(vcpu, vcpu->arch.shared->srr1);
-}
 
 int kvmppc_booke_emulate_op(struct kvm_run *run, struct kvm_vcpu *vcpu,
                             unsigned int inst, int *advance)
@@ -44,20 +36,6 @@ int kvmppc_booke_emulate_op(struct kvm_run *run, struct kvm_vcpu *vcpu,
 	int rt;
 
 	switch (get_op(inst)) {
-	case 19:
-		switch (get_xop(inst)) {
-		case OP_19_XOP_RFI:
-			kvmppc_emul_rfi(vcpu);
-			kvmppc_set_exit_type(vcpu, EMULATED_RFI_EXITS);
-			*advance = 0;
-			break;
-
-		default:
-			emulated = EMULATE_FAIL;
-			break;
-		}
-		break;
-
 	case 31:
 		switch (get_xop(inst)) {
 
