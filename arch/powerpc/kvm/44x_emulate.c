@@ -49,26 +49,6 @@ int kvmppc_core_emulate_op(struct kvm_run *run, struct kvm_vcpu *vcpu,
 	case 31:
 		switch (get_xop(inst)) {
 
-		case XOP_MTDCR:
-			dcrn = get_dcrn(inst);
-			rs = get_rs(inst);
-
-			/* emulate some access in kernel */
-			switch (dcrn) {
-			case DCRN_CPR0_CONFIG_ADDR:
-				vcpu->arch.cpr0_cfgaddr = kvmppc_get_gpr(vcpu, rs);
-				break;
-			default:
-				run->dcr.dcrn = dcrn;
-				run->dcr.data = kvmppc_get_gpr(vcpu, rs);
-				run->dcr.is_write = 1;
-				vcpu->arch.dcr_needed = 1;
-				kvmppc_account_exit(vcpu, DCR_EXITS);
-				emulated = EMULATE_DO_DCR;
-			}
-
-			break;
-
 		case XOP_TLBWE:
 			ra = get_ra(inst);
 			rs = get_rs(inst);
@@ -174,7 +154,30 @@ static int kvmppc_emulate_mfdcr(struct kvm_vcpu *vcpu, int rt, int ra, int rb,
 	return EMULATE_DONE;
 }
 
+static int kvmppc_emulate_mtdcr(struct kvm_vcpu *vcpu, int rs, int ra, int rb,
+				int rc)
+{
+	int dcrn = (rb << 5) | ra;
+
+	/* emulate some access in kernel */
+	switch (dcrn) {
+	case DCRN_CPR0_CONFIG_ADDR:
+		vcpu->arch.cpr0_cfgaddr = kvmppc_get_gpr(vcpu, rs);
+		break;
+	default:
+		vcpu->run->dcr.dcrn = dcrn;
+		vcpu->run->dcr.data = kvmppc_get_gpr(vcpu, rs);
+		vcpu->run->dcr.is_write = 1;
+		vcpu->arch.dcr_needed = 1;
+		kvmppc_account_exit(vcpu, DCR_EXITS);
+		return EMULATE_DO_DCR;
+	}
+
+	return EMULATE_DONE;
+}
+
 void __init kvmppc_emulate_44x_init(void)
 {
 	kvmppc_emulate_register_x(XOP_MFDCR, EMUL_FORM_X, kvmppc_emulate_mfdcr);
+	kvmppc_emulate_register_x(XOP_MTDCR, EMUL_FORM_X, kvmppc_emulate_mtdcr);
 }
