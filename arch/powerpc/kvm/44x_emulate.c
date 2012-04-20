@@ -49,9 +49,6 @@ int kvmppc_core_emulate_op(struct kvm_run *run, struct kvm_vcpu *vcpu,
 	case 31:
 		switch (get_xop(inst)) {
 
-		case XOP_ICCCI:
-			break;
-
 		default:
 			emulated = EMULATE_FAIL;
 		}
@@ -173,10 +170,17 @@ static int kvmppc_emulate_tlbsx(struct kvm_vcpu *vcpu, int rt, int ra, int rb,
 	return kvmppc_44x_emul_tlbsx(vcpu, rt, ra, rb, rc);
 }
 
+static int kvmppc_emulate_iccci(struct kvm_vcpu *vcpu, int rt, int ra, int rb,
+				int rc)
+{
+	return EMULATE_DONE;
+}
+
 void __init kvmppc_emulate_44x_init(void)
 {
 	kvmppc_emulate_register_x(XOP_MFDCR, EMUL_FORM_X, kvmppc_emulate_mfdcr);
 	kvmppc_emulate_register_x(XOP_MTDCR, EMUL_FORM_X, kvmppc_emulate_mtdcr);
 	kvmppc_emulate_register_x(XOP_TLBWE, EMUL_FORM_X, kvmppc_emulate_tlbwe);
 	kvmppc_emulate_register_x(XOP_TLBSX, EMUL_FORM_X, kvmppc_emulate_tlbsx);
+	kvmppc_emulate_register_x(XOP_ICCCI, EMUL_FORM_X, kvmppc_emulate_iccci);
 }
