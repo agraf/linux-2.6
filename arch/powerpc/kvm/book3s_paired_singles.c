@@ -1315,6 +1315,6 @@ void __init kvmppc_emulate_paired_singles_init(void)
 				  kvmppc_emulate_ps_x);
 	kvmppc_emulate_register_x(OP_31_STFUX, EMUL_FORM_X,
 				  kvmppc_emulate_ps_x);
-	kvmppc_emulate_register_x(OP_31_STFUWX, EMUL_FORM_X,
+	kvmppc_emulate_register_x(OP_31_STFIWX, EMUL_FORM_X,
 				  kvmppc_emulate_ps_x);
 }
