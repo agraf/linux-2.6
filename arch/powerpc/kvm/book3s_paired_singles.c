@@ -638,7 +638,7 @@ static int kvmppc_ps_one_in(struct kvm_vcpu *vcpu, bool rc,
 	return EMULATE_DONE;
 }
 
-int kvmppc_emulate_paired_single(struct kvm_run *run, struct kvm_vcpu *vcpu)
+static int kvmppc_emulate_paired_single(struct kvm_run *run, struct kvm_vcpu *vcpu)
 {
 	u32 inst = kvmppc_get_last_inst(vcpu);
 	enum emulation_result emulated = EMULATE_DONE;
