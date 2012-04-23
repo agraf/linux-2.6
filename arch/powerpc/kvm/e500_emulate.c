@@ -116,26 +116,6 @@ int kvmppc_core_emulate_mtspr(struct kvm_vcpu *vcpu, int sprn, int rs)
 	ulong spr_val = kvmppc_get_gpr(vcpu, rs);
 
 	switch (sprn) {
-#ifndef CONFIG_KVM_BOOKE_HV
-	case SPRN_MAS0:
-		vcpu->arch.shared->mas0 = spr_val; break;
-	case SPRN_MAS1:
-		vcpu->arch.shared->mas1 = spr_val; break;
-	case SPRN_MAS2:
-		vcpu->arch.shared->mas2 = spr_val; break;
-	case SPRN_MAS3:
-		vcpu->arch.shared->mas7_3 &= ~(u64)0xffffffff;
-		vcpu->arch.shared->mas7_3 |= spr_val;
-		break;
-	case SPRN_MAS4:
-		vcpu->arch.shared->mas4 = spr_val; break;
-	case SPRN_MAS6:
-		vcpu->arch.shared->mas6 = spr_val; break;
-	case SPRN_MAS7:
-		vcpu->arch.shared->mas7_3 &= (u64)0xffffffff;
-		vcpu->arch.shared->mas7_3 |= (u64)spr_val << 32;
-		break;
-#endif
 	case SPRN_L1CSR0:
 		vcpu_e500->l1csr0 = spr_val;
 		vcpu_e500->l1csr0 &= ~(L1CSR0_DCFI | L1CSR0_CLFC);
@@ -184,28 +164,6 @@ int kvmppc_core_emulate_mfspr(struct kvm_vcpu *vcpu, int sprn, int rt)
 	int emulated = EMULATE_DONE;
 
 	switch (sprn) {
-#ifndef CONFIG_KVM_BOOKE_HV
-		unsigned long val;
-
-	case SPRN_MAS0:
-		kvmppc_set_gpr(vcpu, rt, vcpu->arch.shared->mas0); break;
-	case SPRN_MAS1:
-		kvmppc_set_gpr(vcpu, rt, vcpu->arch.shared->mas1); break;
-	case SPRN_MAS2:
-		kvmppc_set_gpr(vcpu, rt, vcpu->arch.shared->mas2); break;
-	case SPRN_MAS3:
-		val = (u32)vcpu->arch.shared->mas7_3;
-		kvmppc_set_gpr(vcpu, rt, val);
-		break;
-	case SPRN_MAS4:
-		kvmppc_set_gpr(vcpu, rt, vcpu->arch.shared->mas4); break;
-	case SPRN_MAS6:
-		kvmppc_set_gpr(vcpu, rt, vcpu->arch.shared->mas6); break;
-	case SPRN_MAS7:
-		val = vcpu->arch.shared->mas7_3 >> 32;
-		kvmppc_set_gpr(vcpu, rt, val);
-		break;
-#endif
 	case SPRN_TLB0CFG:
 		kvmppc_set_gpr(vcpu, rt, vcpu->arch.tlbcfg[0]); break;
 	case SPRN_TLB1CFG:
@@ -330,6 +288,104 @@ static int kvmppc_spr_write_pid2(struct kvm_vcpu *vcpu, int sprn, ulong val)
 	return EMULATE_DONE;
 }
 
+static int kvmppc_spr_read_mas0(struct kvm_vcpu *vcpu, int sprn, ulong *val)
+{
+	*val = vcpu->arch.shared->mas0;
+	return EMULATE_DONE;
+}
+
+static int kvmppc_spr_write_mas0(struct kvm_vcpu *vcpu, int sprn, ulong val)
+{
+	vcpu->arch.shared->mas0 = val;
+	return EMULATE_DONE;
+}
+
+static int kvmppc_spr_read_mas1(struct kvm_vcpu *vcpu, int sprn, ulong *val)
+{
+	*val = vcpu->arch.shared->mas1;
+	return EMULATE_DONE;
+}
+
+static int kvmppc_spr_write_mas1(struct kvm_vcpu *vcpu, int sprn, ulong val)
+{
+	vcpu->arch.shared->mas1 = val;
+	return EMULATE_DONE;
+}
+
+static int kvmppc_spr_read_mas2(struct kvm_vcpu *vcpu, int sprn, ulong *val)
+{
+	*val = vcpu->arch.shared->mas2;
+	return EMULATE_DONE;
+}
+
+static int kvmppc_spr_write_mas2(struct kvm_vcpu *vcpu, int sprn, ulong val)
+{
+	vcpu->arch.shared->mas2 = val;
+	return EMULATE_DONE;
+}
+
+static int kvmppc_spr_read_mas3(struct kvm_vcpu *vcpu, int sprn, ulong *val)
+{
+	*val = (u32)vcpu->arch.shared->mas7_3;
+	return EMULATE_DONE;
+}
+
+static int kvmppc_spr_write_mas3(struct kvm_vcpu *vcpu, int sprn, ulong val)
+{
+	vcpu->arch.shared->mas7_3 &= ~(u64)0xffffffff;
+	vcpu->arch.shared->mas7_3 |= val;
+	return EMULATE_DONE;
+}
+
+static int kvmppc_spr_read_mas4(struct kvm_vcpu *vcpu, int sprn, ulong *val)
+{
+	*val = vcpu->arch.shared->mas4;
+	return EMULATE_DONE;
+}
+
+static int kvmppc_spr_write_mas4(struct kvm_vcpu *vcpu, int sprn, ulong val)
+{
+	vcpu->arch.shared->mas4 = val;
+	return EMULATE_DONE;
+}
+
+static int kvmppc_spr_read_mas5(struct kvm_vcpu *vcpu, int sprn, ulong *val)
+{
+	*val = vcpu->arch.shared->mas5;
+	return EMULATE_DONE;
+}
+
+static int kvmppc_spr_write_mas5(struct kvm_vcpu *vcpu, int sprn, ulong val)
+{
+	vcpu->arch.shared->mas5 = val;
+	return EMULATE_DONE;
+}
+
+static int kvmppc_spr_read_mas6(struct kvm_vcpu *vcpu, int sprn, ulong *val)
+{
+	*val = vcpu->arch.shared->mas6;
+	return EMULATE_DONE;
+}
+
+static int kvmppc_spr_write_mas6(struct kvm_vcpu *vcpu, int sprn, ulong val)
+{
+	vcpu->arch.shared->mas6 = val;
+	return EMULATE_DONE;
+}
+
+static int kvmppc_spr_read_mas7(struct kvm_vcpu *vcpu, int sprn, ulong *val)
+{
+	*val = vcpu->arch.shared->mas7 >> 32;
+	return EMULATE_DONE;
+}
+
+static int kvmppc_spr_write_mas7(struct kvm_vcpu *vcpu, int sprn, ulong val)
+{
+	vcpu->arch.shared->mas7_3 &= (u64)0xffffffff;
+	vcpu->arch.shared->mas7_3 |= (u64)val << 32;
+	return EMULATE_DONE;
+}
+
 #endif
 
 void __init kvmppc_emulate_e500_init(void)
@@ -358,5 +414,29 @@ void __init kvmppc_emulate_e500_init(void)
 	kvmppc_emulate_register_spr(SPRN_PID2, EMUL_FORM_SPR,
 				    kvmppc_spr_read_pid2,
 				    kvmppc_spr_write_pid2);
+	kvmppc_emulate_register_spr(SPRN_MAS0, EMUL_FORM_SPR,
+				    kvmppc_spr_read_mas0,
+				    kvmppc_spr_write_mas0);
+	kvmppc_emulate_register_spr(SPRN_MAS1, EMUL_FORM_SPR,
+				    kvmppc_spr_read_mas1,
+				    kvmppc_spr_write_mas1);
+	kvmppc_emulate_register_spr(SPRN_MAS2, EMUL_FORM_SPR,
+				    kvmppc_spr_read_mas2,
+				    kvmppc_spr_write_mas2);
+	kvmppc_emulate_register_spr(SPRN_MAS3, EMUL_FORM_SPR,
+				    kvmppc_spr_read_mas3,
+				    kvmppc_spr_write_mas3);
+	kvmppc_emulate_register_spr(SPRN_MAS4, EMUL_FORM_SPR,
+				    kvmppc_spr_read_mas4,
+				    kvmppc_spr_write_mas4);
+	kvmppc_emulate_register_spr(SPRN_MAS5, EMUL_FORM_SPR,
+				    kvmppc_spr_read_mas5,
+				    kvmppc_spr_write_mas5);
+	kvmppc_emulate_register_spr(SPRN_MAS6, EMUL_FORM_SPR,
+				    kvmppc_spr_read_mas6,
+				    kvmppc_spr_write_mas6);
+	kvmppc_emulate_register_spr(SPRN_MAS7, EMUL_FORM_SPR,
+				    kvmppc_spr_read_mas7,
+				    kvmppc_spr_write_mas7);
 #endif
 }
