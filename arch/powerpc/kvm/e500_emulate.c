@@ -111,65 +111,14 @@ int kvmppc_core_emulate_op(struct kvm_run *run, struct kvm_vcpu *vcpu,
 
 int kvmppc_core_emulate_mtspr(struct kvm_vcpu *vcpu, int sprn, int rs)
 {
-	struct kvmppc_vcpu_e500 *vcpu_e500 = to_e500(vcpu);
 	int emulated = EMULATE_DONE;
-	ulong spr_val = kvmppc_get_gpr(vcpu, rs);
-
-	switch (sprn) {
-	/* extra exceptions */
-	case SPRN_IVOR32:
-		vcpu->arch.ivor[BOOKE_IRQPRIO_SPE_UNAVAIL] = spr_val;
-		break;
-	case SPRN_IVOR33:
-		vcpu->arch.ivor[BOOKE_IRQPRIO_SPE_FP_DATA] = spr_val;
-		break;
-	case SPRN_IVOR34:
-		vcpu->arch.ivor[BOOKE_IRQPRIO_SPE_FP_ROUND] = spr_val;
-		break;
-	case SPRN_IVOR35:
-		vcpu->arch.ivor[BOOKE_IRQPRIO_PERFORMANCE_MONITOR] = spr_val;
-		break;
-#ifdef CONFIG_KVM_BOOKE_HV
-	case SPRN_IVOR36:
-		vcpu->arch.ivor[BOOKE_IRQPRIO_DBELL] = spr_val;
-		break;
-	case SPRN_IVOR37:
-		vcpu->arch.ivor[BOOKE_IRQPRIO_DBELL_CRIT] = spr_val;
-		break;
-#endif
-	}
 
 	return emulated;
 }
 
 int kvmppc_core_emulate_mfspr(struct kvm_vcpu *vcpu, int sprn, int rt)
 {
-	struct kvmppc_vcpu_e500 *vcpu_e500 = to_e500(vcpu);
 	int emulated = EMULATE_DONE;
-
-	switch (sprn) {
-	/* extra exceptions */
-	case SPRN_IVOR32:
-		kvmppc_set_gpr(vcpu, rt, vcpu->arch.ivor[BOOKE_IRQPRIO_SPE_UNAVAIL]);
-		break;
-	case SPRN_IVOR33:
-		kvmppc_set_gpr(vcpu, rt, vcpu->arch.ivor[BOOKE_IRQPRIO_SPE_FP_DATA]);
-		break;
-	case SPRN_IVOR34:
-		kvmppc_set_gpr(vcpu, rt, vcpu->arch.ivor[BOOKE_IRQPRIO_SPE_FP_ROUND]);
-		break;
-	case SPRN_IVOR35:
-		kvmppc_set_gpr(vcpu, rt, vcpu->arch.ivor[BOOKE_IRQPRIO_PERFORMANCE_MONITOR]);
-		break;
-#ifdef CONFIG_KVM_BOOKE_HV
-	case SPRN_IVOR36:
-		kvmppc_set_gpr(vcpu, rt, vcpu->arch.ivor[BOOKE_IRQPRIO_DBELL]);
-		break;
-	case SPRN_IVOR37:
-		kvmppc_set_gpr(vcpu, rt, vcpu->arch.ivor[BOOKE_IRQPRIO_DBELL_CRIT]);
-		break;
-#endif
-	}
 
 	return emulated;
 }
@@ -437,6 +386,31 @@ static int kvmppc_spr_read_mmucfg(struct kvm_vcpu *vcpu, int sprn, ulong *val)
 	return EMULATE_DONE;
 }
 
+static const ivor2irqprio_ext[] {
+	BOOKE_IRQPRIO_SPE_UNAVAIL,
+	BOOKE_IRQPRIO_SPE_FP_DATA,
+	BOOKE_IRQPRIO_SPE_FP_ROUND,
+	BOOKE_IRQPRIO_PERFORMANCE_MONITOR,
+#ifdef CONFIG_KVM_BOOKE_HV
+	BOOKE_IRQPRIO_DBELL,
+	BOOKE_IRQPRIO_DBELL_CRIT,
+#endif
+}
+
+static int kvmppc_spr_read_ivor_32_37(struct kvm_vcpu *vcpu, int sprn,
+				      ulong *val)
+{
+	*val = vcpu->arch.ivor[ivor2irqprio_ext[sprn - SPRN_IVOR32]];
+	return EMULATE_DONE;
+}
+
+static int kvmppc_spr_write_ivor_32_37(struct kvm_vcpu *vcpu, int sprn,
+				       ulong val)
+{
+	vcpu->arch.ivor[ivor2irqprio_ext[sprn - SPRN_IVOR32]] = val;
+	return EMULATE_DONE;
+}
+
 void __init kvmppc_emulate_e500_init(void)
 {
 	kvmppc_emulate_register_x(XOP_TLBRE, EMUL_FORM_X, kvmppc_emulate_tlbre);
@@ -511,4 +485,24 @@ void __init kvmppc_emulate_e500_init(void)
 				    kvmppc_spr_write_mmucsr0);
 	kvmppc_emulate_register_spr(SPRN_MMUCFG, EMUL_FORM_SPR,
 				    kvmppc_spr_read_mmucfg, NULL);
+	kvmppc_emulate_register_spr(SPRN_IVOR32, EMUL_FORM_SPR,
+				    kvmppc_spr_read_ivor_32_37,
+				    kvmppc_spr_write_ivor_32_37);
+	kvmppc_emulate_register_spr(SPRN_IVOR33, EMUL_FORM_SPR,
+				    kvmppc_spr_read_ivor_32_37,
+				    kvmppc_spr_write_ivor_32_37);
+	kvmppc_emulate_register_spr(SPRN_IVOR34, EMUL_FORM_SPR,
+				    kvmppc_spr_read_ivor_32_37,
+				    kvmppc_spr_write_ivor_32_37);
+	kvmppc_emulate_register_spr(SPRN_IVOR35, EMUL_FORM_SPR,
+				    kvmppc_spr_read_ivor_32_37,
+				    kvmppc_spr_write_ivor_32_37);
+#ifdef CONFIG_KVM_BOOKE_HV
+	kvmppc_emulate_register_spr(SPRN_IVOR36, EMUL_FORM_SPR,
+				    kvmppc_spr_read_ivor_32_37,
+				    kvmppc_spr_write_ivor_32_37);
+	kvmppc_emulate_register_spr(SPRN_IVOR37, EMUL_FORM_SPR,
+				    kvmppc_spr_read_ivor_32_37,
+				    kvmppc_spr_write_ivor_32_37);
+#endif
 }
