@@ -353,15 +353,24 @@ static int kvmppc_spr_write_dar(struct kvm_vcpu *vcpu, int sprn, ulong val)
 	return EMULATE_DONE;
 }
 
+static int kvmppc_spr_read_hior(struct kvm_vcpu *vcpu, int sprn, ulong *val)
+{
+	*val = to_book3s(vcpu)->hior;
+	return EMULATE_DONE;
+}
+
+static int kvmppc_spr_write_hior(struct kvm_vcpu *vcpu, int sprn, ulong val)
+{
+	to_book3s(vcpu)->hior = val;
+	return EMULATE_DONE;
+}
+
 int kvmppc_core_emulate_mtspr(struct kvm_vcpu *vcpu, int sprn, int rs)
 {
 	int emulated = EMULATE_DONE;
 	ulong spr_val = kvmppc_get_gpr(vcpu, rs);
 
 	switch (sprn) {
-	case SPRN_HIOR:
-		to_book3s(vcpu)->hior = spr_val;
-		break;
 	case SPRN_IBAT0U ... SPRN_IBAT3L:
 	case SPRN_IBAT4U ... SPRN_IBAT7L:
 	case SPRN_DBAT0U ... SPRN_DBAT3L:
@@ -476,9 +485,6 @@ int kvmppc_core_emulate_mfspr(struct kvm_vcpu *vcpu, int sprn, int rt)
 
 		break;
 	}
-	case SPRN_HIOR:
-		kvmppc_set_gpr(vcpu, rt, to_book3s(vcpu)->hior);
-		break;
 	case SPRN_HID0:
 		kvmppc_set_gpr(vcpu, rt, to_book3s(vcpu)->hid[0]);
 		break;
@@ -643,4 +649,7 @@ void __init kvmppc_emulate_book3s_init(void)
 	kvmppc_emulate_register_spr(SPRN_DAR, EMUL_FORM_SPR,
 				    kvmppc_spr_read_dar,
 				    kvmppc_spr_write_dar);
+	kvmppc_emulate_register_spr(SPRN_HIOR, EMUL_FORM_SPR,
+				    kvmppc_spr_read_hior,
+				    kvmppc_spr_write_hior);
 }
