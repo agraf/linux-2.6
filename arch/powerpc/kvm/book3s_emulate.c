@@ -454,16 +454,24 @@ static int kvmppc_spr_write_hid2_gekko(struct kvm_vcpu *vcpu, int sprn,
 	return EMULATE_DONE;
 }
 
+static int kvmppc_spr_read_hid4(struct kvm_vcpu *vcpu, int sprn, ulong *val)
+{
+	*val = to_book3s(vcpu)->hid[4];
+	return EMULATE_DONE;
+}
+
+static int kvmppc_spr_write_hid4(struct kvm_vcpu *vcpu, int sprn, ulong val)
+{
+	to_book3s(vcpu)->hid[4] = val;
+	return EMULATE_DONE;
+}
+
 int kvmppc_core_emulate_mtspr(struct kvm_vcpu *vcpu, int sprn, int rs)
 {
 	int emulated = EMULATE_DONE;
 	ulong spr_val = kvmppc_get_gpr(vcpu, rs);
 
 	switch (sprn) {
-	case SPRN_HID4:
-	case SPRN_HID4_GEKKO:
-		to_book3s(vcpu)->hid[4] = spr_val;
-		break;
 	case SPRN_HID5:
 		to_book3s(vcpu)->hid[5] = spr_val;
 		/* guest HID5 set can change is_dcbz32 */
@@ -513,10 +521,6 @@ int kvmppc_core_emulate_mfspr(struct kvm_vcpu *vcpu, int sprn, int rt)
 	int emulated = EMULATE_DONE;
 
 	switch (sprn) {
-	case SPRN_HID4:
-	case SPRN_HID4_GEKKO:
-		kvmppc_set_gpr(vcpu, rt, to_book3s(vcpu)->hid[4]);
-		break;
 	case SPRN_HID5:
 		kvmppc_set_gpr(vcpu, rt, to_book3s(vcpu)->hid[5]);
 		break;
@@ -697,4 +701,10 @@ void __init kvmppc_emulate_book3s_init(void)
 	kvmppc_emulate_register_spr(SPRN_HID2_GEKKO, EMUL_FORM_SPR,
 				    kvmppc_spr_read_hid2,
 				    kvmppc_spr_write_hid2_gekko);
+	kvmppc_emulate_register_spr(SPRN_HID4, EMUL_FORM_SPR,
+				    kvmppc_spr_read_hid4,
+				    kvmppc_spr_write_hid4);
+	kvmppc_emulate_register_spr(SPRN_HID4_GEKKO, EMUL_FORM_SPR,
+				    kvmppc_spr_read_hid4,
+				    kvmppc_spr_write_hid4);
 }
