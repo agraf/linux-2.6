@@ -116,11 +116,6 @@ int kvmppc_core_emulate_mtspr(struct kvm_vcpu *vcpu, int sprn, int rs)
 	ulong spr_val = kvmppc_get_gpr(vcpu, rs);
 
 	switch (sprn) {
-	case SPRN_MMUCSR0:
-		emulated = kvmppc_e500_emul_mt_mmucsr0(vcpu_e500,
-				spr_val);
-		break;
-
 	/* extra exceptions */
 	case SPRN_IVOR32:
 		vcpu->arch.ivor[BOOKE_IRQPRIO_SPE_UNAVAIL] = spr_val;
@@ -153,9 +148,6 @@ int kvmppc_core_emulate_mfspr(struct kvm_vcpu *vcpu, int sprn, int rt)
 	int emulated = EMULATE_DONE;
 
 	switch (sprn) {
-	case SPRN_MMUCSR0:
-		kvmppc_set_gpr(vcpu, rt, 0); break;
-
 	case SPRN_MMUCFG:
 		kvmppc_set_gpr(vcpu, rt, vcpu->arch.mmucfg); break;
 
@@ -431,6 +423,17 @@ static int kvmppc_spr_read_svr(struct kvm_vcpu *vcpu, int sprn, ulong *val)
 	return EMULATE_DONE;
 }
 
+static int kvmppc_spr_read_mmucsr0(struct kvm_vcpu *vcpu, int sprn, ulong *val)
+{
+	*val = 0;
+	return EMULATE_DONE;
+}
+
+static int kvmppc_spr_write_mmucsr0(struct kvm_vcpu *vcpu, int sprn, ulong val)
+{
+	return kvmppc_e500_emul_mt_mmucsr0(to_e500(vcpu), val);
+}
+
 void __init kvmppc_emulate_e500_init(void)
 {
 	kvmppc_emulate_register_x(XOP_TLBRE, EMUL_FORM_X, kvmppc_emulate_tlbre);
@@ -500,4 +503,7 @@ void __init kvmppc_emulate_e500_init(void)
 				    kvmppc_spr_read_tlbcfg, NULL);
 	kvmppc_emulate_register_spr(SPRN_SVR, EMUL_FORM_SPR,
 				    kvmppc_spr_read_svr, NULL);
+	kvmppc_emulate_register_spr(SPRN_MMUCSR0, EMUL_FORM_SPR,
+				    kvmppc_spr_read_mmucsr0,
+				    kvmppc_spr_write_mmucsr0);
 }
