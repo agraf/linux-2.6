@@ -23,23 +23,23 @@
 #include <asm/reg.h>
 #include <asm/switch_to.h>
 
-#define OP_31_XOP_MTMSRD	178
-#define OP_31_XOP_MTSR		210
-#define OP_31_XOP_MTSRIN	242
-#define OP_31_XOP_TLBIEL	274
-#define OP_31_XOP_TLBIE		306
-#define OP_31_XOP_SLBMTE	402
-#define OP_31_XOP_SLBIE		434
-#define OP_31_XOP_SLBIA		498
-#define OP_31_XOP_MFSR		595
-#define OP_31_XOP_MFSRIN	659
-#define OP_31_XOP_DCBA		758
-#define OP_31_XOP_SLBMFEV	851
-#define OP_31_XOP_EIOIO		854
-#define OP_31_XOP_SLBMFEE	915
+#define XOP_MTMSRD		178
+#define XOP_MTSR		210
+#define XOP_MTSRIN		242
+#define XOP_TLBIEL		274
+#define XOP_TLBIE		306
+#define XOP_SLBMTE		402
+#define XOP_SLBIE		434
+#define XOP_SLBIA		498
+#define XOP_MFSR		595
+#define XOP_MFSRIN		659
+#define XOP_DCBA		758
+#define XOP_SLBMFEV		851
+#define XOP_EIOIO		854
+#define XOP_SLBMFEE		915
 
 /* DCBZ is actually 1014, but we patch it to 1010 so we get a trap */
-#define OP_31_XOP_DCBZ		1010
+#define XOP_DCBZ		1010
 
 #define OP_LFS			48
 #define OP_LFD			50
@@ -86,7 +86,7 @@ int kvmppc_core_emulate_op(struct kvm_run *run, struct kvm_vcpu *vcpu,
 	switch (get_op(inst)) {
 	case 31:
 		switch (get_xop(inst)) {
-		case OP_31_XOP_MTMSRD:
+		case XOP_MTMSRD:
 		{
 			ulong rs = kvmppc_get_gpr(vcpu, get_rs(inst));
 			if (inst & 0x10000) {
@@ -96,7 +96,7 @@ int kvmppc_core_emulate_op(struct kvm_run *run, struct kvm_vcpu *vcpu,
 				kvmppc_set_msr(vcpu, rs);
 			break;
 		}
-		case OP_31_XOP_MFSR:
+		case XOP_MFSR:
 		{
 			int srnum;
 
@@ -108,7 +108,7 @@ int kvmppc_core_emulate_op(struct kvm_run *run, struct kvm_vcpu *vcpu,
 			}
 			break;
 		}
-		case OP_31_XOP_MFSRIN:
+		case XOP_MFSRIN:
 		{
 			int srnum;
 
@@ -120,27 +120,27 @@ int kvmppc_core_emulate_op(struct kvm_run *run, struct kvm_vcpu *vcpu,
 			}
 			break;
 		}
-		case OP_31_XOP_MTSR:
+		case XOP_MTSR:
 			vcpu->arch.mmu.mtsrin(vcpu,
 				(inst >> 16) & 0xf,
 				kvmppc_get_gpr(vcpu, get_rs(inst)));
 			break;
-		case OP_31_XOP_MTSRIN:
+		case XOP_MTSRIN:
 			vcpu->arch.mmu.mtsrin(vcpu,
 				(kvmppc_get_gpr(vcpu, get_rb(inst)) >> 28) & 0xf,
 				kvmppc_get_gpr(vcpu, get_rs(inst)));
 			break;
-		case OP_31_XOP_TLBIE:
-		case OP_31_XOP_TLBIEL:
+		case XOP_TLBIE:
+		case XOP_TLBIEL:
 		{
 			bool large = (inst & 0x00200000) ? true : false;
 			ulong addr = kvmppc_get_gpr(vcpu, get_rb(inst));
 			vcpu->arch.mmu.tlbie(vcpu, addr, large);
 			break;
 		}
-		case OP_31_XOP_EIOIO:
+		case XOP_EIOIO:
 			break;
-		case OP_31_XOP_SLBMTE:
+		case XOP_SLBMTE:
 			if (!vcpu->arch.mmu.slbmte)
 				return EMULATE_FAIL;
 
@@ -148,20 +148,20 @@ int kvmppc_core_emulate_op(struct kvm_run *run, struct kvm_vcpu *vcpu,
 					kvmppc_get_gpr(vcpu, get_rs(inst)),
 					kvmppc_get_gpr(vcpu, get_rb(inst)));
 			break;
-		case OP_31_XOP_SLBIE:
+		case XOP_SLBIE:
 			if (!vcpu->arch.mmu.slbie)
 				return EMULATE_FAIL;
 
 			vcpu->arch.mmu.slbie(vcpu,
 					kvmppc_get_gpr(vcpu, get_rb(inst)));
 			break;
-		case OP_31_XOP_SLBIA:
+		case XOP_SLBIA:
 			if (!vcpu->arch.mmu.slbia)
 				return EMULATE_FAIL;
 
 			vcpu->arch.mmu.slbia(vcpu);
 			break;
-		case OP_31_XOP_SLBMFEE:
+		case XOP_SLBMFEE:
 			if (!vcpu->arch.mmu.slbmfee) {
 				emulated = EMULATE_FAIL;
 			} else {
@@ -172,7 +172,7 @@ int kvmppc_core_emulate_op(struct kvm_run *run, struct kvm_vcpu *vcpu,
 				kvmppc_set_gpr(vcpu, get_rt(inst), t);
 			}
 			break;
-		case OP_31_XOP_SLBMFEV:
+		case XOP_SLBMFEV:
 			if (!vcpu->arch.mmu.slbmfev) {
 				emulated = EMULATE_FAIL;
 			} else {
@@ -183,10 +183,10 @@ int kvmppc_core_emulate_op(struct kvm_run *run, struct kvm_vcpu *vcpu,
 				kvmppc_set_gpr(vcpu, get_rt(inst), t);
 			}
 			break;
-		case OP_31_XOP_DCBA:
+		case XOP_DCBA:
 			/* Gets treated as NOP */
 			break;
-		case OP_31_XOP_DCBZ:
+		case XOP_DCBZ:
 		{
 			ulong rb = kvmppc_get_gpr(vcpu, get_rb(inst));
 			ulong ra = 0;
