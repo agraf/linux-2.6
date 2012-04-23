@@ -210,7 +210,7 @@ static int kvmppc_emulate_dcbz(struct kvm_vcpu *vcpu, int rt, int ra, int rb,
 	ulong addr, vaddr;
 	u32 zeros[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
 	u32 dsisr;
-	int r;
+	int r, ret = EMULATE_DONE;
 
 	if (ra)
 		ra_val = kvmppc_get_gpr(vcpu, ra);
@@ -225,7 +225,7 @@ static int kvmppc_emulate_dcbz(struct kvm_vcpu *vcpu, int rt, int ra, int rb,
 		struct kvmppc_book3s_shadow_vcpu *svcpu;
 
 		svcpu = svcpu_get(vcpu);
-		*advance = 0;
+		ret = EMULATE_DONE_KEEPNIP;
 		vcpu->arch.shared->dar = vaddr;
 		svcpu->fault_dar = vaddr;
 
@@ -243,7 +243,7 @@ static int kvmppc_emulate_dcbz(struct kvm_vcpu *vcpu, int rt, int ra, int rb,
 			BOOK3S_INTERRUPT_DATA_STORAGE);
 	}
 
-	return EMULATE_DONE;
+	return ret;
 }
 
 int kvmppc_core_emulate_op(struct kvm_run *run, struct kvm_vcpu *vcpu,
