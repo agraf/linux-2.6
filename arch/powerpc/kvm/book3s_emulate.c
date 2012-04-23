@@ -78,6 +78,19 @@ static bool spr_allowed(struct kvm_vcpu *vcpu, enum priv_level level)
 	return true;
 }
 
+static int kvmppc_emulate_mtmsrd(struct kvm_vcpu *vcpu, int rs, int ra, int rb,
+				 int rc)
+{
+	ulong val = kvmppc_get_gpr(vcpu, rs);
+	if (rb & 0x20) {
+		vcpu->arch.shared->msr &= ~(MSR_RI | MSR_EE);
+		vcpu->arch.shared->msr |= val & (MSR_RI | MSR_EE);
+	} else {
+		kvmppc_set_msr(vcpu, val);
+	}
+	return EMULATE_DONE;
+}
+
 int kvmppc_core_emulate_op(struct kvm_run *run, struct kvm_vcpu *vcpu,
                            unsigned int inst, int *advance)
 {
@@ -86,16 +99,6 @@ int kvmppc_core_emulate_op(struct kvm_run *run, struct kvm_vcpu *vcpu,
 	switch (get_op(inst)) {
 	case 31:
 		switch (get_xop(inst)) {
-		case XOP_MTMSRD:
-		{
-			ulong rs = kvmppc_get_gpr(vcpu, get_rs(inst));
-			if (inst & 0x10000) {
-				vcpu->arch.shared->msr &= ~(MSR_RI | MSR_EE);
-				vcpu->arch.shared->msr |= rs & (MSR_RI | MSR_EE);
-			} else
-				kvmppc_set_msr(vcpu, rs);
-			break;
-		}
 		case XOP_MFSR:
 		{
 			int srnum;
@@ -567,4 +570,6 @@ ulong kvmppc_alignment_dar(struct kvm_vcpu *vcpu, unsigned int inst)
 
 void __init kvmppc_emulate_book3s_init(void)
 {
+	kvmppc_emulate_register_x(XOP_MTMSRD, EMUL_FORM_X,
+				  kvmppc_emulate_mtmsrd);
 }
