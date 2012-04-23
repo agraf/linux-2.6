@@ -499,27 +499,17 @@ static int kvmppc_spr_write_hid5(struct kvm_vcpu *vcpu, int sprn, ulong val)
 	return EMULATE_DONE;
 }
 
+static int kvmppc_spr_write_noop(struct kvm_vcpu *vcpu, int sprn, ulong val)
+{
+	return EMULATE_DONE;
+}
+
 int kvmppc_core_emulate_mtspr(struct kvm_vcpu *vcpu, int sprn, int rs)
 {
 	int emulated = EMULATE_DONE;
 	ulong spr_val = kvmppc_get_gpr(vcpu, rs);
 
 	switch (sprn) {
-	case SPRN_ICTC:
-	case SPRN_THRM1:
-	case SPRN_THRM2:
-	case SPRN_THRM3:
-	case SPRN_CTRLF:
-	case SPRN_CTRLT:
-	case SPRN_L2CR:
-	case SPRN_MMCR0_GEKKO:
-	case SPRN_MMCR1_GEKKO:
-	case SPRN_PMC1_GEKKO:
-	case SPRN_PMC2_GEKKO:
-	case SPRN_PMC3_GEKKO:
-	case SPRN_PMC4_GEKKO:
-	case SPRN_WPAR_GEKKO:
-		break;
 unprivileged:
 	default:
 		printk(KERN_INFO "KVM: invalid SPR write: %d\n", sprn);
@@ -537,21 +527,6 @@ int kvmppc_core_emulate_mfspr(struct kvm_vcpu *vcpu, int sprn, int rt)
 	int emulated = EMULATE_DONE;
 
 	switch (sprn) {
-	case SPRN_THRM1:
-	case SPRN_THRM2:
-	case SPRN_THRM3:
-	case SPRN_CTRLF:
-	case SPRN_CTRLT:
-	case SPRN_L2CR:
-	case SPRN_MMCR0_GEKKO:
-	case SPRN_MMCR1_GEKKO:
-	case SPRN_PMC1_GEKKO:
-	case SPRN_PMC2_GEKKO:
-	case SPRN_PMC3_GEKKO:
-	case SPRN_PMC4_GEKKO:
-	case SPRN_WPAR_GEKKO:
-		kvmppc_set_gpr(vcpu, rt, 0);
-		break;
 	default:
 unprivileged:
 		printk(KERN_INFO "KVM: invalid SPR read: %d\n", sprn);
@@ -648,6 +623,12 @@ void __init kvmppc_emulate_book3s_init(void)
 		SPRN_DBAT4U, SPRN_DBAT4L, SPRN_DBAT5U, SPRN_DBAT5L,
 		SPRN_DBAT6U, SPRN_DBAT6L, SPRN_DBAT7U, SPRN_DBAT7L,
 	};
+	static const int noop_spr[] = {
+		SPRN_ICTC, SPRN_THRM1, SPRN_THRM2, SPRN_THRM3, SPRN_CTRLF,
+		SPRN_CTRLT, SPRN_L2CR, SPRN_MMCR0_GEKKO, SPRN_MMCR1_GEKKO,
+		SPRN_PMC1_GEKKO, SPRN_PMC2_GEKKO, SPRN_PMC3_GEKKO,
+		SPRN_PMC4_GEKKO, SPRN_WPAR_GEKKO,
+	};
 
 	kvmppc_emulate_register_x(XOP_MTMSRD, EMUL_FORM_X,
 				  kvmppc_emulate_mtmsrd);
@@ -717,4 +698,8 @@ void __init kvmppc_emulate_book3s_init(void)
 		kvmppc_emulate_register_spr(SPRN_GQR0 + i, EMUL_FORM_SPR,
 					    kvmppc_spr_read_gqr,
 					    kvmppc_spr_write_gqr);
+	for (i = 0; i < ARRAY_SIZE(noop_spr); i++)
+		kvmppc_emulate_register_spr(noop_spr[i], EMUL_FORM_SPR,
+					    kvmppc_spr_read_zero,
+					    kvmppc_spr_write_noop);
 }
