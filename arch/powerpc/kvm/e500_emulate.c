@@ -153,10 +153,6 @@ int kvmppc_core_emulate_mfspr(struct kvm_vcpu *vcpu, int sprn, int rt)
 	int emulated = EMULATE_DONE;
 
 	switch (sprn) {
-	case SPRN_TLB0CFG:
-		kvmppc_set_gpr(vcpu, rt, vcpu->arch.tlbcfg[0]); break;
-	case SPRN_TLB1CFG:
-		kvmppc_set_gpr(vcpu, rt, vcpu->arch.tlbcfg[1]); break;
 	case SPRN_SVR:
 		kvmppc_set_gpr(vcpu, rt, vcpu_e500->svr); break;
 
@@ -425,6 +421,12 @@ static int kvmppc_spr_write_hid1(struct kvm_vcpu *vcpu, int sprn, ulong val)
 	return EMULATE_DONE;
 }
 
+static int kvmppc_spr_read_tlbcfg(struct kvm_vcpu *vcpu, int sprn, ulong *val)
+{
+	*val = vcpu->arch.tlbcfg[sprn - SPRN_TLB0CFG];
+	return EMULATE_DONE;
+}
+
 void __init kvmppc_emulate_e500_init(void)
 {
 	kvmppc_emulate_register_x(XOP_TLBRE, EMUL_FORM_X, kvmppc_emulate_tlbre);
@@ -488,4 +490,8 @@ void __init kvmppc_emulate_e500_init(void)
 	kvmppc_emulate_register_spr(SPRN_HID1, EMUL_FORM_SPR,
 				    kvmppc_spr_read_hid1,
 				    kvmppc_spr_write_hid1);
+	kvmppc_emulate_register_spr(SPRN_TLB0CFG, EMUL_FORM_SPR,
+				    kvmppc_spr_read_tlbcfg, NULL);
+	kvmppc_emulate_register_spr(SPRN_TLB1CFG, EMUL_FORM_SPR,
+				    kvmppc_spr_read_tlbcfg, NULL);
 }
