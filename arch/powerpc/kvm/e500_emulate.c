@@ -117,10 +117,6 @@ int kvmppc_core_emulate_mtspr(struct kvm_vcpu *vcpu, int sprn, int rs)
 
 	switch (sprn) {
 #ifndef CONFIG_KVM_BOOKE_HV
-	case SPRN_PID1:
-		if (spr_val != 0)
-			return EMULATE_FAIL;
-		vcpu_e500->pid[1] = spr_val; break;
 	case SPRN_PID2:
 		if (spr_val != 0)
 			return EMULATE_FAIL;
@@ -195,8 +191,6 @@ int kvmppc_core_emulate_mfspr(struct kvm_vcpu *vcpu, int sprn, int rt)
 #ifndef CONFIG_KVM_BOOKE_HV
 		unsigned long val;
 
-	case SPRN_PID1:
-		kvmppc_set_gpr(vcpu, rt, vcpu_e500->pid[1]); break;
 	case SPRN_PID2:
 		kvmppc_set_gpr(vcpu, rt, vcpu_e500->pid[2]); break;
 	case SPRN_MAS0:
@@ -310,6 +304,22 @@ static int kvmppc_spr_write_pid(struct kvm_vcpu *vcpu, int sprn, ulong val)
 	return EMULATE_DONE;
 }
 
+static int kvmppc_spr_read_pid1(struct kvm_vcpu *vcpu, int sprn, ulong *val)
+{
+	struct kvmppc_vcpu_e500 *vcpu_e500 = to_e500(vcpu);
+	*val = vcpu_e500->pid[1];
+	return EMULATE_DONE;
+}
+
+static int kvmppc_spr_write_pid1(struct kvm_vcpu *vcpu, int sprn, ulong val)
+{
+	struct kvmppc_vcpu_e500 *vcpu_e500 = to_e500(vcpu);
+	if (val != 0)
+		return EMULATE_FAIL;
+	vcpu_e500->pid[1] = val;
+	return EMULATE_DONE;
+}
+
 #endif
 
 void __init kvmppc_emulate_e500_init(void)
@@ -332,5 +342,8 @@ void __init kvmppc_emulate_e500_init(void)
 	kvmppc_emulate_register_spr(SPRN_PID, EMUL_FORM_SPR,
 				    kvmppc_spr_read_pid,
 				    kvmppc_spr_write_pid);
+	kvmppc_emulate_register_spr(SPRN_PID1, EMUL_FORM_SPR,
+				    kvmppc_spr_read_pid1,
+				    kvmppc_spr_write_pid1);
 #endif
 }
