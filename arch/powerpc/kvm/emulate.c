@@ -486,7 +486,6 @@ static int kvmppc_emulate_19(struct kvm_vcpu *vcpu, int rt, int ra, int d)
 			kvmppc_set_msr(vcpu, srr1);
 			kvmppc_set_exit_type(vcpu, EMULATED_RFI_EXITS);
 			return EMULATE_DONE_KEEPNIP;
-		default:
 	}
 	return EMULATE_FAIL;
 }
