@@ -66,6 +66,9 @@ extern void kvmppc_emulate_register_d(int op, int flags,
                 int (*func)(struct kvm_vcpu *vcpu, int rt, int ra, int d));
 extern void kvmppc_emulate_register_x(int op, int flags,
 	int (*func)(struct kvm_vcpu *vcpu, int rt, int ra, int rb, int rc));
+extern void kvmppc_emulate_register_spr(int sprn, int flags,
+	int (*read)(struct kvm_vcpu *vcpu, int sprn, ulong *reg),
+	int (*write)(struct kvm_vcpu *vcpu, int sprn, ulong val));
 
 extern int kvmppc_vcpu_run(struct kvm_run *kvm_run, struct kvm_vcpu *vcpu);
 extern int __kvmppc_vcpu_run(struct kvm_run *kvm_run, struct kvm_vcpu *vcpu);
