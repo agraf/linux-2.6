@@ -700,8 +700,8 @@ void __init kvmppc_emulate_register_x(int xop, int flags,
 
 void __init kvmppc_emulate_init(void)
 {
-	kvmppc_list_op = kmalloc(sizeof(struct kvmppc_opentry) * 0x40,
-				 GFP_KERNEL | __GFP_ZERO);
+	kvmppc_list_op = kzalloc(sizeof(struct kvmppc_opentry) * 0x40,
+				 GFP_KERNEL);
 
 	kvmppc_emulate_register_d(OP_LWZ, 0, kvmppc_emulate_lwz);
 	kvmppc_emulate_register_d(OP_LWZU, 0, kvmppc_emulate_lwzu);
