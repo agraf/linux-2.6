@@ -535,9 +535,6 @@ int kvmppc_core_emulate_mfspr(struct kvm_vcpu *vcpu, int sprn, int rt)
 	int emulated = EMULATE_DONE;
 
 	switch (sprn) {
-	case SPRN_PURR:
-		kvmppc_set_gpr(vcpu, rt, 0);
-		break;
 	case SPRN_GQR0:
 	case SPRN_GQR1:
 	case SPRN_GQR2:
@@ -721,5 +718,7 @@ void __init kvmppc_emulate_book3s_init(void)
 				    kvmppc_spr_read_hid5,
 				    kvmppc_spr_write_hid5);
 	kvmppc_emulate_register_spr(SPRN_CFAR, EMUL_FORM_SPR,
+				    kvmppc_spr_read_zero, NULL);
+	kvmppc_emulate_register_spr(SPRN_PURR, EMUL_FORM_SPR,
 				    kvmppc_spr_read_zero, NULL);
 }
