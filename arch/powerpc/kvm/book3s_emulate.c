@@ -154,6 +154,16 @@ static int kvmppc_emulate_slbmte(struct kvm_vcpu *vcpu, int rs, int ra, int rb,
 	return EMULATE_DONE;
 }
 
+static int kvmppc_emulate_slbie(struct kvm_vcpu *vcpu, int rs, int ra, int rb,
+				int rc)
+{
+	if (!vcpu->arch.mmu.slbie)
+		return EMULATE_FAIL;
+
+	vcpu->arch.mmu.slbie(vcpu, kvmppc_get_gpr(vcpu, rb));
+	return EMULATE_DONE;
+}
+
 int kvmppc_core_emulate_op(struct kvm_run *run, struct kvm_vcpu *vcpu,
                            unsigned int inst, int *advance)
 {
@@ -162,13 +172,6 @@ int kvmppc_core_emulate_op(struct kvm_run *run, struct kvm_vcpu *vcpu,
 	switch (get_op(inst)) {
 	case 31:
 		switch (get_xop(inst)) {
-		case XOP_SLBIE:
-			if (!vcpu->arch.mmu.slbie)
-				return EMULATE_FAIL;
-
-			vcpu->arch.mmu.slbie(vcpu,
-					kvmppc_get_gpr(vcpu, get_rb(inst)));
-			break;
 		case XOP_SLBIA:
 			if (!vcpu->arch.mmu.slbia)
 				return EMULATE_FAIL;
@@ -595,4 +598,5 @@ void __init kvmppc_emulate_book3s_init(void)
 	kvmppc_emulate_register_x(XOP_EIOIO, EMUL_FORM_X, kvmppc_emulate_xnop);
 	kvmppc_emulate_register_x(XOP_SLBMTE, EMUL_FORM_X,
 				  kvmppc_emulate_slbmte);
+	kvmppc_emulate_register_x(XOP_SLBIE, EMUL_FORM_X, kvmppc_emulate_slbie);
 }
