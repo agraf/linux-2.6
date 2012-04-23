@@ -104,13 +104,6 @@ int kvmppc_core_emulate_op(struct kvm_run *run, struct kvm_vcpu *vcpu,
 			break;
 #endif
 
-		case XOP_TLBILX:
-			ra = get_ra(inst);
-			rb = get_rb(inst);
-			rt = get_rt(inst);
-			emulated = kvmppc_e500_emul_tlbilx(vcpu, rt, ra, rb);
-			break;
-
 		case XOP_TLBIVAX:
 			ra = get_ra(inst);
 			rb = get_rb(inst);
@@ -309,9 +302,17 @@ static int kvmppc_emulate_tlbsx(struct kvm_vcpu *vcpu, int rt, int ra, int rb,
 	return kvmppc_e500_emul_tlbsx(vcpu, rb);
 }
 
+static int kvmppc_emulate_tlbilx(struct kvm_vcpu *vcpu, int rt, int ra, int rb,
+				 int rc)
+{
+	return kvmppc_e500_emul_tlbilx(vcpu, rt, ra, rb);
+}
+
 void __init kvmppc_emulate_e500_init(void)
 {
 	kvmppc_emulate_register_x(XOP_TLBRE, EMUL_FORM_X, kvmppc_emulate_tlbre);
 	kvmppc_emulate_register_x(XOP_TLBWE, EMUL_FORM_X, kvmppc_emulate_tlbwe);
 	kvmppc_emulate_register_x(XOP_TLBSX, EMUL_FORM_X, kvmppc_emulate_tlbsx);
+	kvmppc_emulate_register_x(XOP_TLBILX, EMUL_FORM_X,
+				  kvmppc_emulate_tlbilx);
 }
