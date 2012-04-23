@@ -304,3 +304,6 @@ int kvmppc_core_emulate_mfspr(struct kvm_vcpu *vcpu, int sprn, int rt)
 	return emulated;
 }
 
+void __init kvmppc_emulate_e500_init(void)
+{
+}

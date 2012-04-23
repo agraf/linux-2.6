@@ -518,6 +518,7 @@ static int __init kvmppc_e500_init(void)
 
 	kvmppc_emulate_init();
 	kvmppc_emulate_booke_init();
+	kvmppc_emulate_e500_init();
 
 	return kvm_init(NULL, sizeof(struct kvmppc_vcpu_e500), 0, THIS_MODULE);
 }
