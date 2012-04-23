@@ -526,6 +526,7 @@ static int __init kvmppc_e500_init(void)
 static void __exit kvmppc_e500_exit(void)
 {
 	kvmppc_booke_exit();
+	kvmppc_emulate_exit();
 }
 
 module_init(kvmppc_e500_init);

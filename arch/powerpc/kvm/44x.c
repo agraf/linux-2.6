@@ -190,6 +190,7 @@ static int __init kvmppc_44x_init(void)
 static void __exit kvmppc_44x_exit(void)
 {
 	kvmppc_booke_exit();
+	kvmppc_emulate_exit();
 }
 
 module_init(kvmppc_44x_init);
