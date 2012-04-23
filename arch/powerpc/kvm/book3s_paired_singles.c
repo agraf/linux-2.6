@@ -1268,3 +1268,7 @@ int kvmppc_emulate_paired_single(struct kvm_run *run, struct kvm_vcpu *vcpu)
 
 	return emulated;
 }
+
+void __init kvmppc_emulate_paired_singles_init(void)
+{
+}
