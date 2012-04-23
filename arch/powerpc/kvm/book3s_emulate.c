@@ -425,36 +425,41 @@ static int kvmppc_spr_write_hid2(struct kvm_vcpu *vcpu, int sprn, ulong val)
 	return EMULATE_DONE;
 }
 
+static int kvmppc_spr_write_hid2_gekko(struct kvm_vcpu *vcpu, int sprn,
+				       ulong val)
+{
+	to_book3s(vcpu)->hid[2] = val;
+
+	/* HID2.PSE controls paired single on gekko */
+	switch (vcpu->arch.pvr) {
+	case 0x00080200:	/* lonestar 2.0 */
+	case 0x00088202:	/* lonestar 2.2 */
+	case 0x70000100:	/* gekko 1.0 */
+	case 0x00080100:	/* gekko 2.0 */
+	case 0x00083203:	/* gekko 2.3a */
+	case 0x00083213:	/* gekko 2.3b */
+	case 0x00083204:	/* gekko 2.4 */
+	case 0x00083214:	/* gekko 2.4e (8SE) - retail HW2 */
+	case 0x00087200:	/* broadway */
+		if (vcpu->arch.hflags & BOOK3S_HFLAG_NATIVE_PS) {
+			/* Native paired singles */
+		} else if (spr_val & (1 << 29)) { /* HID2.PSE */
+			vcpu->arch.hflags |= BOOK3S_HFLAG_PAIRED_SINGLE;
+			kvmppc_giveup_ext(vcpu, MSR_FP);
+		} else {
+			vcpu->arch.hflags &= ~BOOK3S_HFLAG_PAIRED_SINGLE;
+		}
+		break;
+	}
+	return EMULATE_DONE;
+}
+
 int kvmppc_core_emulate_mtspr(struct kvm_vcpu *vcpu, int sprn, int rs)
 {
 	int emulated = EMULATE_DONE;
 	ulong spr_val = kvmppc_get_gpr(vcpu, rs);
 
 	switch (sprn) {
-	case SPRN_HID2_GEKKO:
-		to_book3s(vcpu)->hid[2] = spr_val;
-		/* HID2.PSE controls paired single on gekko */
-		switch (vcpu->arch.pvr) {
-		case 0x00080200:	/* lonestar 2.0 */
-		case 0x00088202:	/* lonestar 2.2 */
-		case 0x70000100:	/* gekko 1.0 */
-		case 0x00080100:	/* gekko 2.0 */
-		case 0x00083203:	/* gekko 2.3a */
-		case 0x00083213:	/* gekko 2.3b */
-		case 0x00083204:	/* gekko 2.4 */
-		case 0x00083214:	/* gekko 2.4e (8SE) - retail HW2 */
-		case 0x00087200:	/* broadway */
-			if (vcpu->arch.hflags & BOOK3S_HFLAG_NATIVE_PS) {
-				/* Native paired singles */
-			} else if (spr_val & (1 << 29)) { /* HID2.PSE */
-				vcpu->arch.hflags |= BOOK3S_HFLAG_PAIRED_SINGLE;
-				kvmppc_giveup_ext(vcpu, MSR_FP);
-			} else {
-				vcpu->arch.hflags &= ~BOOK3S_HFLAG_PAIRED_SINGLE;
-			}
-			break;
-		}
-		break;
 	case SPRN_HID4:
 	case SPRN_HID4_GEKKO:
 		to_book3s(vcpu)->hid[4] = spr_val;
@@ -508,9 +513,6 @@ int kvmppc_core_emulate_mfspr(struct kvm_vcpu *vcpu, int sprn, int rt)
 	int emulated = EMULATE_DONE;
 
 	switch (sprn) {
-	case SPRN_HID2_GEKKO:
-		kvmppc_set_gpr(vcpu, rt, to_book3s(vcpu)->hid[2]);
-		break;
 	case SPRN_HID4:
 	case SPRN_HID4_GEKKO:
 		kvmppc_set_gpr(vcpu, rt, to_book3s(vcpu)->hid[4]);
@@ -692,4 +694,7 @@ void __init kvmppc_emulate_book3s_init(void)
 	kvmppc_emulate_register_spr(SPRN_HID2, EMUL_FORM_SPR,
 				    kvmppc_spr_read_hid2,
 				    kvmppc_spr_write_hid2);
+	kvmppc_emulate_register_spr(SPRN_HID2_GEKKO, EMUL_FORM_SPR,
+				    kvmppc_spr_read_hid2,
+				    kvmppc_spr_write_hid2_gekko);
 }
