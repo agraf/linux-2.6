@@ -724,8 +724,8 @@ void __init kvmppc_emulate_init(void)
 	kvmppc_emulate_register_d(19, 0, kvmppc_emulate_19);
 
 	/* op31 is special in that it multiplexes */
-	kvmppc_list_op31 = kmalloc(sizeof(struct kvmppc_opentry) * 0x400,
-				   GFP_KERNEL | __GFP_ZERO);
+	kvmppc_list_op31 = kzalloc(sizeof(struct kvmppc_opentry) * 0x400,
+				   GFP_KERNEL);
 
 	kvmppc_emulate_register(31, EMUL_FORM_X, NULL);
 	kvmppc_emulate_register_x(OP_31_XOP_LWZX, EMUL_FORM_X,
