@@ -324,7 +324,7 @@ static int kvmppc_spr_read_sdr1(struct kvm_vcpu *vcpu, int sprn, ulong *val)
 static int kvmppc_spr_write_sdr1(struct kvm_vcpu *vcpu, int sprn, ulong val)
 {
 	if (!spr_allowed(vcpu, PRIV_HYPER))
-		goto EMULATE_FAIL;
+		return EMULATE_FAIL;
 	to_book3s(vcpu)->sdr1 = val;
 	return EMULATE_DONE;
 }
