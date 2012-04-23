@@ -443,7 +443,7 @@ static int kvmppc_spr_write_hid2_gekko(struct kvm_vcpu *vcpu, int sprn,
 	case 0x00087200:	/* broadway */
 		if (vcpu->arch.hflags & BOOK3S_HFLAG_NATIVE_PS) {
 			/* Native paired singles */
-		} else if (spr_val & (1 << 29)) { /* HID2.PSE */
+		} else if (val & (1 << 29)) { /* HID2.PSE */
 			vcpu->arch.hflags |= BOOK3S_HFLAG_PAIRED_SINGLE;
 			kvmppc_giveup_ext(vcpu, MSR_FP);
 		} else {
