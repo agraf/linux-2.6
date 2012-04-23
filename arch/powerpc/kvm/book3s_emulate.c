@@ -128,6 +128,15 @@ static int kvmppc_emulate_mtsrin(struct kvm_vcpu *vcpu, int rs, int ra, int rb,
 	return kvmppc_emulate_mtsr(vcpu, rs, srnum, 0, 0);
 }
 
+static int kvmppc_emulate_tlbie(struct kvm_vcpu *vcpu, int rs, int ra, int rb,
+				int rc)
+{
+	bool large = (ra & 0x20) ? true : false;
+	ulong addr = kvmppc_get_gpr(vcpu, rb);
+	vcpu->arch.mmu.tlbie(vcpu, addr, large);
+	return EMULATE_DONE;
+}
+
 int kvmppc_core_emulate_op(struct kvm_run *run, struct kvm_vcpu *vcpu,
                            unsigned int inst, int *advance)
 {
@@ -136,14 +145,6 @@ int kvmppc_core_emulate_op(struct kvm_run *run, struct kvm_vcpu *vcpu,
 	switch (get_op(inst)) {
 	case 31:
 		switch (get_xop(inst)) {
-		case XOP_TLBIE:
-		case XOP_TLBIEL:
-		{
-			bool large = (inst & 0x00200000) ? true : false;
-			ulong addr = kvmppc_get_gpr(vcpu, get_rb(inst));
-			vcpu->arch.mmu.tlbie(vcpu, addr, large);
-			break;
-		}
 		case XOP_EIOIO:
 			break;
 		case XOP_SLBMTE:
@@ -581,4 +582,7 @@ void __init kvmppc_emulate_book3s_init(void)
 	kvmppc_emulate_register_x(XOP_MTSR, EMUL_FORM_X, kvmppc_emulate_mtsr);
 	kvmppc_emulate_register_x(XOP_MTSRIN, EMUL_FORM_X,
 				  kvmppc_emulate_mtsrin);
+	kvmppc_emulate_register_x(XOP_TLBIE, EMUL_FORM_X, kvmppc_emulate_tlbie);
+	kvmppc_emulate_register_x(XOP_TLBIEL, EMUL_FORM_X,
+				  kvmppc_emulate_tlbie);
 }
