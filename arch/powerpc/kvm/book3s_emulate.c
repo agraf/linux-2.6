@@ -564,3 +564,7 @@ ulong kvmppc_alignment_dar(struct kvm_vcpu *vcpu, unsigned int inst)
 
 	return dar;
 }
+
+void __init kvmppc_emulate_book3s_init(void)
+{
+}
