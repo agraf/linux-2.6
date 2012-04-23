@@ -121,6 +121,13 @@ static int kvmppc_emulate_mtsr(struct kvm_vcpu *vcpu, int rs, int ra, int rb,
 	return EMULATE_DONE;
 }
 
+static int kvmppc_emulate_mtsrin(struct kvm_vcpu *vcpu, int rs, int ra, int rb,
+				 int rc)
+{
+	int srnum = (kvmppc_get_gpr(vcpu, rb) >> 28) & 0xf;
+	return kvmppc_emulate_mtsr(vcpu, rs, srnum, 0, 0);
+}
+
 int kvmppc_core_emulate_op(struct kvm_run *run, struct kvm_vcpu *vcpu,
                            unsigned int inst, int *advance)
 {
@@ -129,11 +136,6 @@ int kvmppc_core_emulate_op(struct kvm_run *run, struct kvm_vcpu *vcpu,
 	switch (get_op(inst)) {
 	case 31:
 		switch (get_xop(inst)) {
-		case XOP_MTSRIN:
-			vcpu->arch.mmu.mtsrin(vcpu,
-				(kvmppc_get_gpr(vcpu, get_rb(inst)) >> 28) & 0xf,
-				kvmppc_get_gpr(vcpu, get_rs(inst)));
-			break;
 		case XOP_TLBIE:
 		case XOP_TLBIEL:
 		{
@@ -577,4 +579,6 @@ void __init kvmppc_emulate_book3s_init(void)
 	kvmppc_emulate_register_x(XOP_MFSRIN, EMUL_FORM_X,
 				  kvmppc_emulate_mfsrin);
 	kvmppc_emulate_register_x(XOP_MTSR, EMUL_FORM_X, kvmppc_emulate_mtsr);
+	kvmppc_emulate_register_x(XOP_MTSRIN, EMUL_FORM_X,
+				  kvmppc_emulate_mtsrin);
 }
