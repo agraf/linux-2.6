@@ -637,6 +637,7 @@ ulong kvmppc_alignment_dar(struct kvm_vcpu *vcpu, unsigned int inst)
 
 void __init kvmppc_emulate_book3s_init(void)
 {
+	int i;
 	static const int bat_spr[] = {
 		SPRN_IBAT0U, SPRN_IBAT0L, SPRN_IBAT1U, SPRN_IBAT1L,
 		SPRN_IBAT2U, SPRN_IBAT2L, SPRN_IBAT3U, SPRN_IBAT3L,
