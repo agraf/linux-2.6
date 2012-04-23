@@ -341,15 +341,24 @@ static int kvmppc_spr_write_dsisr(struct kvm_vcpu *vcpu, int sprn, ulong val)
 	return EMULATE_DONE;
 }
 
+static int kvmppc_spr_read_dar(struct kvm_vcpu *vcpu, int sprn, ulong *val)
+{
+	*val = vcpu->arch.shared->dar;
+	return EMULATE_DONE;
+}
+
+static int kvmppc_spr_write_dar(struct kvm_vcpu *vcpu, int sprn, ulong val)
+{
+	vcpu->arch.shared->dar = val;
+	return EMULATE_DONE;
+}
+
 int kvmppc_core_emulate_mtspr(struct kvm_vcpu *vcpu, int sprn, int rs)
 {
 	int emulated = EMULATE_DONE;
 	ulong spr_val = kvmppc_get_gpr(vcpu, rs);
 
 	switch (sprn) {
-	case SPRN_DAR:
-		vcpu->arch.shared->dar = spr_val;
-		break;
 	case SPRN_HIOR:
 		to_book3s(vcpu)->hior = spr_val;
 		break;
@@ -467,9 +476,6 @@ int kvmppc_core_emulate_mfspr(struct kvm_vcpu *vcpu, int sprn, int rt)
 
 		break;
 	}
-	case SPRN_DAR:
-		kvmppc_set_gpr(vcpu, rt, vcpu->arch.shared->dar);
-		break;
 	case SPRN_HIOR:
 		kvmppc_set_gpr(vcpu, rt, to_book3s(vcpu)->hior);
 		break;
@@ -634,4 +640,7 @@ void __init kvmppc_emulate_book3s_init(void)
 	kvmppc_emulate_register_spr(SPRN_DSISR, EMUL_FORM_SPR,
 				    kvmppc_spr_read_dsisr,
 				    kvmppc_spr_write_dsisr);
+	kvmppc_emulate_register_spr(SPRN_DAR, EMUL_FORM_SPR,
+				    kvmppc_spr_read_dar,
+				    kvmppc_spr_write_dar);
 }
