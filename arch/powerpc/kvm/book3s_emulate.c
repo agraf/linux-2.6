@@ -137,6 +137,12 @@ static int kvmppc_emulate_tlbie(struct kvm_vcpu *vcpu, int rs, int ra, int rb,
 	return EMULATE_DONE;
 }
 
+static int kvmppc_emulate_xnop(struct kvm_vcpu *vcpu, int rs, int ra, int rb,
+				int rc)
+{
+	return EMULATE_DONE;
+}
+
 int kvmppc_core_emulate_op(struct kvm_run *run, struct kvm_vcpu *vcpu,
                            unsigned int inst, int *advance)
 {
@@ -145,8 +151,6 @@ int kvmppc_core_emulate_op(struct kvm_run *run, struct kvm_vcpu *vcpu,
 	switch (get_op(inst)) {
 	case 31:
 		switch (get_xop(inst)) {
-		case XOP_EIOIO:
-			break;
 		case XOP_SLBMTE:
 			if (!vcpu->arch.mmu.slbmte)
 				return EMULATE_FAIL;
@@ -585,4 +589,5 @@ void __init kvmppc_emulate_book3s_init(void)
 	kvmppc_emulate_register_x(XOP_TLBIE, EMUL_FORM_X, kvmppc_emulate_tlbie);
 	kvmppc_emulate_register_x(XOP_TLBIEL, EMUL_FORM_X,
 				  kvmppc_emulate_tlbie);
+	kvmppc_emulate_register_x(XOP_EIOIO, EMUL_FORM_X, kvmppc_emulate_xnop);
 }
