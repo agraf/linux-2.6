@@ -210,9 +210,6 @@ int kvmppc_core_emulate_op(struct kvm_run *run, struct kvm_vcpu *vcpu,
 	switch (get_op(inst)) {
 	case 31:
 		switch (get_xop(inst)) {
-		case XOP_DCBA:
-			/* Gets treated as NOP */
-			break;
 		case XOP_DCBZ:
 		{
 			ulong rb = kvmppc_get_gpr(vcpu, get_rb(inst));
@@ -614,4 +611,5 @@ void __init kvmppc_emulate_book3s_init(void)
 				  kvmppc_emulate_slbmfee);
 	kvmppc_emulate_register_x(XOP_SLBMFEV, EMUL_FORM_X,
 				  kvmppc_emulate_slbmfev);
+	kvmppc_emulate_register_x(XOP_DCBA, EMUL_FORM_X, kvmppc_emulate_xnop);
 }
