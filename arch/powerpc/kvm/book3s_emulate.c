@@ -262,9 +262,6 @@ int kvmppc_core_emulate_op(struct kvm_run *run, struct kvm_vcpu *vcpu,
 		emulated = EMULATE_FAIL;
 	}
 
-	if (emulated == EMULATE_FAIL)
-		emulated = kvmppc_emulate_paired_single(run, vcpu);
-
 	return emulated;
 }
 
