@@ -365,26 +365,36 @@ static int kvmppc_spr_write_hior(struct kvm_vcpu *vcpu, int sprn, ulong val)
 	return EMULATE_DONE;
 }
 
+static int kvmppc_spr_read_bat(struct kvm_vcpu *vcpu, int sprn, ulong *val)
+{
+	struct kvmppc_bat *bat = kvmppc_find_bat(vcpu, sprn);
+
+	if (sprn % 2)
+		*val = bat->raw >> 32;
+	else
+		*val = bat->raw;
+
+	return EMULATE_DONE;
+}
+
+static int kvmppc_spr_write_bat(struct kvm_vcpu *vcpu, int sprn, ulong val)
+{
+	struct kvmppc_bat *bat = kvmppc_find_bat(vcpu, sprn);
+
+	kvmppc_set_bat(vcpu, bat, !(sprn % 2), (u32)val);
+	/* BAT writes happen so rarely that we're ok to flush
+	 * everything here */
+	kvmppc_mmu_pte_flush(vcpu, 0, 0);
+	kvmppc_mmu_flush_segments(vcpu);
+	return EMULATE_DONE;
+}
+
 int kvmppc_core_emulate_mtspr(struct kvm_vcpu *vcpu, int sprn, int rs)
 {
 	int emulated = EMULATE_DONE;
 	ulong spr_val = kvmppc_get_gpr(vcpu, rs);
 
 	switch (sprn) {
-	case SPRN_IBAT0U ... SPRN_IBAT3L:
-	case SPRN_IBAT4U ... SPRN_IBAT7L:
-	case SPRN_DBAT0U ... SPRN_DBAT3L:
-	case SPRN_DBAT4U ... SPRN_DBAT7L:
-	{
-		struct kvmppc_bat *bat = kvmppc_find_bat(vcpu, sprn);
-
-		kvmppc_set_bat(vcpu, bat, !(sprn % 2), (u32)spr_val);
-		/* BAT writes happen so rarely that we're ok to flush
-		 * everything here */
-		kvmppc_mmu_pte_flush(vcpu, 0, 0);
-		kvmppc_mmu_flush_segments(vcpu);
-		break;
-	}
 	case SPRN_HID0:
 		to_book3s(vcpu)->hid[0] = spr_val;
 		break;
@@ -471,20 +481,6 @@ int kvmppc_core_emulate_mfspr(struct kvm_vcpu *vcpu, int sprn, int rt)
 	int emulated = EMULATE_DONE;
 
 	switch (sprn) {
-	case SPRN_IBAT0U ... SPRN_IBAT3L:
-	case SPRN_IBAT4U ... SPRN_IBAT7L:
-	case SPRN_DBAT0U ... SPRN_DBAT3L:
-	case SPRN_DBAT4U ... SPRN_DBAT7L:
-	{
-		struct kvmppc_bat *bat = kvmppc_find_bat(vcpu, sprn);
-
-		if (sprn % 2)
-			kvmppc_set_gpr(vcpu, rt, bat->raw >> 32);
-		else
-			kvmppc_set_gpr(vcpu, rt, bat->raw);
-
-		break;
-	}
 	case SPRN_HID0:
 		kvmppc_set_gpr(vcpu, rt, to_book3s(vcpu)->hid[0]);
 		break;
@@ -617,6 +613,17 @@ ulong kvmppc_alignment_dar(struct kvm_vcpu *vcpu, unsigned int inst)
 
 void __init kvmppc_emulate_book3s_init(void)
 {
+	static const int bat_spr[] = {
+		SPRN_IBAT0U, SPRN_IBAT0L, SPRN_IBAT1U, SPRN_IBAT1L,
+		SPRN_IBAT2U, SPRN_IBAT2L, SPRN_IBAT3U, SPRN_IBAT3L,
+		SPRN_IBAT4U, SPRN_IBAT4L, SPRN_IBAT5U, SPRN_IBAT5L,
+		SPRN_IBAT6U, SPRN_IBAT6L, SPRN_IBAT7U, SPRN_IBAT7L,
+		SPRN_DBAT0U, SPRN_DBAT0L, SPRN_DBAT1U, SPRN_DBAT1L,
+		SPRN_DBAT2U, SPRN_DBAT2L, SPRN_DBAT3U, SPRN_DBAT3L,
+		SPRN_DBAT4U, SPRN_DBAT4L, SPRN_DBAT5U, SPRN_DBAT5L,
+		SPRN_DBAT6U, SPRN_DBAT6L, SPRN_DBAT7U, SPRN_DBAT7L,
+	};
+
 	kvmppc_emulate_register_x(XOP_MTMSRD, EMUL_FORM_X,
 				  kvmppc_emulate_mtmsrd);
 	kvmppc_emulate_register_x(XOP_MFSR, EMUL_FORM_X, kvmppc_emulate_mfsr);
@@ -652,4 +659,8 @@ void __init kvmppc_emulate_book3s_init(void)
 	kvmppc_emulate_register_spr(SPRN_HIOR, EMUL_FORM_SPR,
 				    kvmppc_spr_read_hior,
 				    kvmppc_spr_write_hior);
+	for (i = 0; i < ARRAY_SIZE(bat_spr); i++)
+		kvmppc_emulate_register_spr(bat_spr[i], EMUL_FORM_SPR,
+					    kvmppc_spr_read_bat,
+					    kvmppc_spr_write_bat);
 }
