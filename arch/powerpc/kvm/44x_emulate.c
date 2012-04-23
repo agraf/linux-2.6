@@ -66,34 +66,12 @@ int kvmppc_core_emulate_mtspr(struct kvm_vcpu *vcpu, int sprn, int rs)
 {
 	int emulated = EMULATE_DONE;
 
-	switch (sprn) {
-	case SPRN_PID:
-		kvmppc_set_pid(vcpu, kvmppc_get_gpr(vcpu, rs)); break;
-	case SPRN_MMUCR:
-		vcpu->arch.mmucr = kvmppc_get_gpr(vcpu, rs); break;
-	case SPRN_CCR0:
-		vcpu->arch.ccr0 = kvmppc_get_gpr(vcpu, rs); break;
-	case SPRN_CCR1:
-		vcpu->arch.ccr1 = kvmppc_get_gpr(vcpu, rs); break;
-	}
-
 	return emulated;
 }
 
 int kvmppc_core_emulate_mfspr(struct kvm_vcpu *vcpu, int sprn, int rt)
 {
 	int emulated = EMULATE_DONE;
-
-	switch (sprn) {
-	case SPRN_PID:
-		kvmppc_set_gpr(vcpu, rt, vcpu->arch.pid); break;
-	case SPRN_MMUCR:
-		kvmppc_set_gpr(vcpu, rt, vcpu->arch.mmucr); break;
-	case SPRN_CCR0:
-		kvmppc_set_gpr(vcpu, rt, vcpu->arch.ccr0); break;
-	case SPRN_CCR1:
-		kvmppc_set_gpr(vcpu, rt, vcpu->arch.ccr1); break;
-	}
 
 	return emulated;
 }
@@ -176,6 +154,54 @@ static int kvmppc_emulate_iccci(struct kvm_vcpu *vcpu, int rt, int ra, int rb,
 	return EMULATE_DONE;
 }
 
+static int kvmppc_spr_read_pid(struct kvm_vcpu *vcpu, int sprn, ulong *val)
+{
+	*val = vcpu->arch.pid;
+	return EMULATE_DONE;
+}
+
+static int kvmppc_spr_write_pid(struct kvm_vcpu *vcpu, int sprn, ulong val)
+{
+	kvmppc_set_pid(vcpu, val);
+	return EMULATE_DONE;
+}
+
+static int kvmppc_spr_read_mmucr(struct kvm_vcpu *vcpu, int sprn, ulong *val)
+{
+	*val = vcpu->arch.mmucr;
+	return EMULATE_DONE;
+}
+
+static int kvmppc_spr_write_mmucr(struct kvm_vcpu *vcpu, int sprn, ulong val)
+{
+	vcpu->arch.mmucr = val;
+	return EMULATE_DONE;
+}
+
+static int kvmppc_spr_read_ccr0(struct kvm_vcpu *vcpu, int sprn, ulong *val)
+{
+	*val = vcpu->arch.ccr0;
+	return EMULATE_DONE;
+}
+
+static int kvmppc_spr_write_ccr0(struct kvm_vcpu *vcpu, int sprn, ulong val)
+{
+	vcpu->arch.ccr0 = val;
+	return EMULATE_DONE;
+}
+
+static int kvmppc_spr_read_ccr1(struct kvm_vcpu *vcpu, int sprn, ulong *val)
+{
+	*val = vcpu->arch.ccr1;
+	return EMULATE_DONE;
+}
+
+static int kvmppc_spr_write_ccr1(struct kvm_vcpu *vcpu, int sprn, ulong val)
+{
+	vcpu->arch.ccr1 = val;
+	return EMULATE_DONE;
+}
+
 void __init kvmppc_emulate_44x_init(void)
 {
 	kvmppc_emulate_register_x(XOP_MFDCR, EMUL_FORM_X, kvmppc_emulate_mfdcr);
@@ -183,4 +209,16 @@ void __init kvmppc_emulate_44x_init(void)
 	kvmppc_emulate_register_x(XOP_TLBWE, EMUL_FORM_X, kvmppc_emulate_tlbwe);
 	kvmppc_emulate_register_x(XOP_TLBSX, EMUL_FORM_X, kvmppc_emulate_tlbsx);
 	kvmppc_emulate_register_x(XOP_ICCCI, EMUL_FORM_X, kvmppc_emulate_iccci);
+	kvmppc_emulate_register_spr(SPRN_PID, EMUL_FORM_SPR,
+				    kvmppc_spr_read_pid,
+				    kvmppc_spr_write_pid);
+	kvmppc_emulate_register_spr(SPRN_MMUCR, EMUL_FORM_SPR,
+				    kvmppc_spr_read_mmucr,
+				    kvmppc_spr_write_mmucr);
+	kvmppc_emulate_register_spr(SPRN_CCR0, EMUL_FORM_SPR,
+				    kvmppc_spr_read_ccr0,
+				    kvmppc_spr_write_ccr0);
+	kvmppc_emulate_register_spr(SPRN_CCR1, EMUL_FORM_SPR,
+				    kvmppc_spr_read_ccr1,
+				    kvmppc_spr_write_ccr1);
 }
