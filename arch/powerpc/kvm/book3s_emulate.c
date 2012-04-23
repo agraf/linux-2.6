@@ -487,13 +487,13 @@ static int kvmppc_spr_read_zero(struct kvm_vcpu *vcpu, int sprn, ulong *val)
 	return EMULATE_DONE;
 }
 
-static int kvmppc_spr_read_hid5(struct kvm_vcpu *vcpu, int sprn, ulong *val)
+static int kvmppc_spr_read_gqr(struct kvm_vcpu *vcpu, int sprn, ulong *val)
 {
 	*val = to_book3s(vcpu)->gqr[sprn - SPRN_GQR0];
 	return EMULATE_DONE;
 }
 
-static int kvmppc_spr_write_hid5(struct kvm_vcpu *vcpu, int sprn, ulong val)
+static int kvmppc_spr_write_gqr(struct kvm_vcpu *vcpu, int sprn, ulong val)
 {
 	to_book3s(vcpu)->gqr[sprn - SPRN_GQR0] = val;
 	return EMULATE_DONE;
