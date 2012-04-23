@@ -202,6 +202,50 @@ static int kvmppc_emulate_slbmfev(struct kvm_vcpu *vcpu, int rt, int ra, int rb,
 	return EMULATE_DONE;
 }
 
+static int kvmppc_emulate_dcbz(struct kvm_vcpu *vcpu, int rt, int ra, int rb,
+			       int rc)
+{
+	ulong rb_val = kvmppc_get_gpr(vcpu, rb);
+	ulong ra_val = 0;
+	ulong addr, vaddr;
+	u32 zeros[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
+	u32 dsisr;
+	int r;
+
+	if (ra)
+		ra_val = kvmppc_get_gpr(vcpu, ra);
+
+	addr = (ra_val + rb_val) & ~31ULL;
+	if (!(vcpu->arch.shared->msr & MSR_SF))
+		addr &= 0xffffffff;
+	vaddr = addr;
+
+	r = kvmppc_st(vcpu, &addr, 32, zeros, true);
+	if ((r == -ENOENT) || (r == -EPERM)) {
+		struct kvmppc_book3s_shadow_vcpu *svcpu;
+
+		svcpu = svcpu_get(vcpu);
+		*advance = 0;
+		vcpu->arch.shared->dar = vaddr;
+		svcpu->fault_dar = vaddr;
+
+		dsisr = DSISR_ISSTORE;
+		if (r == -ENOENT)
+			dsisr |= DSISR_NOHPTE;
+		else if (r == -EPERM)
+			dsisr |= DSISR_PROTFAULT;
+
+		vcpu->arch.shared->dsisr = dsisr;
+		svcpu->fault_dsisr = dsisr;
+		svcpu_put(svcpu);
+
+		kvmppc_book3s_queue_irqprio(vcpu,
+			BOOK3S_INTERRUPT_DATA_STORAGE);
+	}
+
+	return EMULATE_DONE;
+}
+
 int kvmppc_core_emulate_op(struct kvm_run *run, struct kvm_vcpu *vcpu,
                            unsigned int inst, int *advance)
 {
@@ -210,48 +254,6 @@ int kvmppc_core_emulate_op(struct kvm_run *run, struct kvm_vcpu *vcpu,
 	switch (get_op(inst)) {
 	case 31:
 		switch (get_xop(inst)) {
-		case XOP_DCBZ:
-		{
-			ulong rb = kvmppc_get_gpr(vcpu, get_rb(inst));
-			ulong ra = 0;
-			ulong addr, vaddr;
-			u32 zeros[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
-			u32 dsisr;
-			int r;
-
-			if (get_ra(inst))
-				ra = kvmppc_get_gpr(vcpu, get_ra(inst));
-
-			addr = (ra + rb) & ~31ULL;
-			if (!(vcpu->arch.shared->msr & MSR_SF))
-				addr &= 0xffffffff;
-			vaddr = addr;
-
-			r = kvmppc_st(vcpu, &addr, 32, zeros, true);
-			if ((r == -ENOENT) || (r == -EPERM)) {
-				struct kvmppc_book3s_shadow_vcpu *svcpu;
-
-				svcpu = svcpu_get(vcpu);
-				*advance = 0;
-				vcpu->arch.shared->dar = vaddr;
-				svcpu->fault_dar = vaddr;
-
-				dsisr = DSISR_ISSTORE;
-				if (r == -ENOENT)
-					dsisr |= DSISR_NOHPTE;
-				else if (r == -EPERM)
-					dsisr |= DSISR_PROTFAULT;
-
-				vcpu->arch.shared->dsisr = dsisr;
-				svcpu->fault_dsisr = dsisr;
-				svcpu_put(svcpu);
-
-				kvmppc_book3s_queue_irqprio(vcpu,
-					BOOK3S_INTERRUPT_DATA_STORAGE);
-			}
-
-			break;
-		}
 		default:
 			emulated = EMULATE_FAIL;
 		}
@@ -612,4 +614,5 @@ void __init kvmppc_emulate_book3s_init(void)
 	kvmppc_emulate_register_x(XOP_SLBMFEV, EMUL_FORM_X,
 				  kvmppc_emulate_slbmfev);
 	kvmppc_emulate_register_x(XOP_DCBA, EMUL_FORM_X, kvmppc_emulate_xnop);
+	kvmppc_emulate_register_x(XOP_DCBZ, EMUL_FORM_X, kvmppc_emulate_dcbz);
 }
