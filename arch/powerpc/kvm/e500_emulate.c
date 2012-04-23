@@ -104,10 +104,6 @@ int kvmppc_core_emulate_op(struct kvm_run *run, struct kvm_vcpu *vcpu,
 			break;
 #endif
 
-		case XOP_TLBRE:
-			emulated = kvmppc_e500_emul_tlbre(vcpu);
-			break;
-
 		case XOP_TLBWE:
 			emulated = kvmppc_e500_emul_tlbwe(vcpu);
 			break;
@@ -304,6 +300,13 @@ int kvmppc_core_emulate_mfspr(struct kvm_vcpu *vcpu, int sprn, int rt)
 	return emulated;
 }
 
+static int kvmppc_emulate_tlbre(struct kvm_vcpu *vcpu, int rt, int ra, int rb,
+				int rc)
+{
+	return kvmppc_e500_emul_tlbre(vcpu);
+}
+
 void __init kvmppc_emulate_e500_init(void)
 {
+	kvmppc_emulate_register_x(XOP_TLBRE, EMUL_FORM_X, kvmppc_emulate_tlbre);
 }
