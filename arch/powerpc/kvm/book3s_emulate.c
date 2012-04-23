@@ -313,17 +313,28 @@ static struct kvmppc_bat *kvmppc_find_bat(struct kvm_vcpu *vcpu, int sprn)
 	return bat;
 }
 
+static int kvmppc_spr_read_sdr1(struct kvm_vcpu *vcpu, int sprn, ulong *val)
+{
+	if (!spr_allowed(vcpu, PRIV_HYPER))
+		return EMULATE_FAIL;
+	*val = to_book3s(vcpu)->sdr1;
+	return EMULATE_DONE;
+}
+
+static int kvmppc_spr_write_sdr1(struct kvm_vcpu *vcpu, int sprn, ulong val)
+{
+	if (!spr_allowed(vcpu, PRIV_HYPER))
+		goto EMULATE_FAIL;
+	to_book3s(vcpu)->sdr1 = val;
+	return EMULATE_DONE;
+}
+
 int kvmppc_core_emulate_mtspr(struct kvm_vcpu *vcpu, int sprn, int rs)
 {
 	int emulated = EMULATE_DONE;
 	ulong spr_val = kvmppc_get_gpr(vcpu, rs);
 
 	switch (sprn) {
-	case SPRN_SDR1:
-		if (!spr_allowed(vcpu, PRIV_HYPER))
-			goto unprivileged;
-		to_book3s(vcpu)->sdr1 = spr_val;
-		break;
 	case SPRN_DSISR:
 		vcpu->arch.shared->dsisr = spr_val;
 		break;
@@ -447,11 +458,6 @@ int kvmppc_core_emulate_mfspr(struct kvm_vcpu *vcpu, int sprn, int rt)
 
 		break;
 	}
-	case SPRN_SDR1:
-		if (!spr_allowed(vcpu, PRIV_HYPER))
-			goto unprivileged;
-		kvmppc_set_gpr(vcpu, rt, to_book3s(vcpu)->sdr1);
-		break;
 	case SPRN_DSISR:
 		kvmppc_set_gpr(vcpu, rt, vcpu->arch.shared->dsisr);
 		break;
@@ -615,4 +621,8 @@ void __init kvmppc_emulate_book3s_init(void)
 				  kvmppc_emulate_slbmfev);
 	kvmppc_emulate_register_x(XOP_DCBA, EMUL_FORM_X, kvmppc_emulate_xnop);
 	kvmppc_emulate_register_x(XOP_DCBZ, EMUL_FORM_X, kvmppc_emulate_dcbz);
+
+	kvmppc_emulate_register_spr(SPRN_SDR1, EMUL_FORM_SPR,
+				    kvmppc_spr_read_sdr1,
+				    kvmppc_spr_write_sdr1);
 }
