@@ -481,6 +481,12 @@ static int kvmppc_spr_write_hid5(struct kvm_vcpu *vcpu, int sprn, ulong val)
 	return EMULATE_DONE;
 }
 
+static int kvmppc_spr_read_zero(struct kvm_vcpu *vcpu, int sprn, ulong *val)
+{
+	*val = 0;
+	return EMULATE_DONE;
+}
+
 int kvmppc_core_emulate_mtspr(struct kvm_vcpu *vcpu, int sprn, int rs)
 {
 	int emulated = EMULATE_DONE;
@@ -529,7 +535,6 @@ int kvmppc_core_emulate_mfspr(struct kvm_vcpu *vcpu, int sprn, int rt)
 	int emulated = EMULATE_DONE;
 
 	switch (sprn) {
-	case SPRN_CFAR:
 	case SPRN_PURR:
 		kvmppc_set_gpr(vcpu, rt, 0);
 		break;
@@ -715,4 +720,6 @@ void __init kvmppc_emulate_book3s_init(void)
 	kvmppc_emulate_register_spr(SPRN_HID5, EMUL_FORM_SPR,
 				    kvmppc_spr_read_hid5,
 				    kvmppc_spr_write_hid5);
+	kvmppc_emulate_register_spr(SPRN_CFAR, EMUL_FORM_SPR,
+				    kvmppc_spr_read_zero, NULL);
 }
