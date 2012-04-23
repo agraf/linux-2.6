@@ -1299,22 +1299,13 @@ void __init kvmppc_emulate_paired_singles_init(void)
 	kvmppc_emulate_register_d(4, 0, kvmppc_emulate_ps_d);
 	kvmppc_emulate_register_d(59, 0, kvmppc_emulate_ps_d);
 	kvmppc_emulate_register_d(63, 0, kvmppc_emulate_ps_d);
-	kvmppc_emulate_register_x(OP_31_LFSX, EMUL_FORM_X,
-				  kvmppc_emulate_ps_x);
-	kvmppc_emulate_register_x(OP_31_LFSUX, EMUL_FORM_X,
-				  kvmppc_emulate_ps_x);
-	kvmppc_emulate_register_x(OP_31_LFDX, EMUL_FORM_X,
-				  kvmppc_emulate_ps_x);
-	kvmppc_emulate_register_x(OP_31_LFDUX, EMUL_FORM_X,
-				  kvmppc_emulate_ps_x);
-	kvmppc_emulate_register_x(OP_31_STFSX, EMUL_FORM_X,
-				  kvmppc_emulate_ps_x);
-	kvmppc_emulate_register_x(OP_31_STFSUX, EMUL_FORM_X,
-				  kvmppc_emulate_ps_x);
-	kvmppc_emulate_register_x(OP_31_STFX, EMUL_FORM_X,
-				  kvmppc_emulate_ps_x);
-	kvmppc_emulate_register_x(OP_31_STFUX, EMUL_FORM_X,
-				  kvmppc_emulate_ps_x);
-	kvmppc_emulate_register_x(OP_31_STFIWX, EMUL_FORM_X,
-				  kvmppc_emulate_ps_x);
+	kvmppc_emulate_register_x(OP_31_LFSX, 0, kvmppc_emulate_ps_x);
+	kvmppc_emulate_register_x(OP_31_LFSUX, 0, kvmppc_emulate_ps_x);
+	kvmppc_emulate_register_x(OP_31_LFDX, 0, kvmppc_emulate_ps_x);
+	kvmppc_emulate_register_x(OP_31_LFDUX, 0, kvmppc_emulate_ps_x);
+	kvmppc_emulate_register_x(OP_31_STFSX, 0, kvmppc_emulate_ps_x);
+	kvmppc_emulate_register_x(OP_31_STFSUX, 0, kvmppc_emulate_ps_x);
+	kvmppc_emulate_register_x(OP_31_STFX, 0, kvmppc_emulate_ps_x);
+	kvmppc_emulate_register_x(OP_31_STFUX, 0, kvmppc_emulate_ps_x);
+	kvmppc_emulate_register_x(OP_31_STFIWX, 0, kvmppc_emulate_ps_x);
 }

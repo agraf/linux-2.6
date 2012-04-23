@@ -161,21 +161,21 @@ static int kvmppc_spr_write_ccr1(struct kvm_vcpu *vcpu, int sprn, ulong val)
 
 void __init kvmppc_emulate_44x_init(void)
 {
-	kvmppc_emulate_register_x(XOP_MFDCR, EMUL_FORM_X, kvmppc_emulate_mfdcr);
-	kvmppc_emulate_register_x(XOP_MTDCR, EMUL_FORM_X, kvmppc_emulate_mtdcr);
-	kvmppc_emulate_register_x(XOP_TLBWE, EMUL_FORM_X, kvmppc_emulate_tlbwe);
-	kvmppc_emulate_register_x(XOP_TLBSX, EMUL_FORM_X, kvmppc_emulate_tlbsx);
-	kvmppc_emulate_register_x(XOP_ICCCI, EMUL_FORM_X, kvmppc_emulate_iccci);
-	kvmppc_emulate_register_spr(SPRN_PID, EMUL_FORM_SPR,
+	kvmppc_emulate_register_x(XOP_MFDCR, 0, kvmppc_emulate_mfdcr);
+	kvmppc_emulate_register_x(XOP_MTDCR, 0, kvmppc_emulate_mtdcr);
+	kvmppc_emulate_register_x(XOP_TLBWE, 0, kvmppc_emulate_tlbwe);
+	kvmppc_emulate_register_x(XOP_TLBSX, 0, kvmppc_emulate_tlbsx);
+	kvmppc_emulate_register_x(XOP_ICCCI, 0, kvmppc_emulate_iccci);
+	kvmppc_emulate_register_spr(SPRN_PID, 0,
 				    kvmppc_spr_read_pid,
 				    kvmppc_spr_write_pid);
-	kvmppc_emulate_register_spr(SPRN_MMUCR, EMUL_FORM_SPR,
+	kvmppc_emulate_register_spr(SPRN_MMUCR, 0,
 				    kvmppc_spr_read_mmucr,
 				    kvmppc_spr_write_mmucr);
-	kvmppc_emulate_register_spr(SPRN_CCR0, EMUL_FORM_SPR,
+	kvmppc_emulate_register_spr(SPRN_CCR0, 0,
 				    kvmppc_spr_read_ccr0,
 				    kvmppc_spr_write_ccr0);
-	kvmppc_emulate_register_spr(SPRN_CCR1, EMUL_FORM_SPR,
+	kvmppc_emulate_register_spr(SPRN_CCR1, 0,
 				    kvmppc_spr_read_ccr1,
 				    kvmppc_spr_write_ccr1);
 }

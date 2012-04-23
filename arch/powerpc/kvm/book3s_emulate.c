@@ -573,76 +573,69 @@ void __init kvmppc_emulate_book3s_init(void)
 		SPRN_PMC4_GEKKO, SPRN_WPAR_GEKKO,
 	};
 
-	kvmppc_emulate_register_x(XOP_MTMSRD, EMUL_FORM_X,
-				  kvmppc_emulate_mtmsrd);
-	kvmppc_emulate_register_x(XOP_MFSR, EMUL_FORM_X, kvmppc_emulate_mfsr);
-	kvmppc_emulate_register_x(XOP_MFSRIN, EMUL_FORM_X,
-				  kvmppc_emulate_mfsrin);
-	kvmppc_emulate_register_x(XOP_MTSR, EMUL_FORM_X, kvmppc_emulate_mtsr);
-	kvmppc_emulate_register_x(XOP_MTSRIN, EMUL_FORM_X,
-				  kvmppc_emulate_mtsrin);
-	kvmppc_emulate_register_x(XOP_TLBIE, EMUL_FORM_X, kvmppc_emulate_tlbie);
-	kvmppc_emulate_register_x(XOP_TLBIEL, EMUL_FORM_X,
-				  kvmppc_emulate_tlbie);
-	kvmppc_emulate_register_x(XOP_EIOIO, EMUL_FORM_X, kvmppc_emulate_xnop);
-	kvmppc_emulate_register_x(XOP_SLBMTE, EMUL_FORM_X,
-				  kvmppc_emulate_slbmte);
-	kvmppc_emulate_register_x(XOP_SLBIE, EMUL_FORM_X, kvmppc_emulate_slbie);
-	kvmppc_emulate_register_x(XOP_SLBIA, EMUL_FORM_X, kvmppc_emulate_slbia);
-	kvmppc_emulate_register_x(XOP_SLBMFEE, EMUL_FORM_X,
-				  kvmppc_emulate_slbmfee);
-	kvmppc_emulate_register_x(XOP_SLBMFEV, EMUL_FORM_X,
-				  kvmppc_emulate_slbmfev);
-	kvmppc_emulate_register_x(XOP_DCBA, EMUL_FORM_X, kvmppc_emulate_xnop);
-	kvmppc_emulate_register_x(XOP_DCBZ, EMUL_FORM_X, kvmppc_emulate_dcbz);
+	kvmppc_emulate_register_x(XOP_MTMSRD, 0, kvmppc_emulate_mtmsrd);
+	kvmppc_emulate_register_x(XOP_MFSR, 0, kvmppc_emulate_mfsr);
+	kvmppc_emulate_register_x(XOP_MFSRIN, 0, kvmppc_emulate_mfsrin);
+	kvmppc_emulate_register_x(XOP_MTSR, 0, kvmppc_emulate_mtsr);
+	kvmppc_emulate_register_x(XOP_MTSRIN, 0, kvmppc_emulate_mtsrin);
+	kvmppc_emulate_register_x(XOP_TLBIE, 0, kvmppc_emulate_tlbie);
+	kvmppc_emulate_register_x(XOP_TLBIEL, 0, kvmppc_emulate_tlbie);
+	kvmppc_emulate_register_x(XOP_EIOIO, 0, kvmppc_emulate_xnop);
+	kvmppc_emulate_register_x(XOP_SLBMTE, 0, kvmppc_emulate_slbmte);
+	kvmppc_emulate_register_x(XOP_SLBIE, 0, kvmppc_emulate_slbie);
+	kvmppc_emulate_register_x(XOP_SLBIA, 0, kvmppc_emulate_slbia);
+	kvmppc_emulate_register_x(XOP_SLBMFEE, 0, kvmppc_emulate_slbmfee);
+	kvmppc_emulate_register_x(XOP_SLBMFEV, 0, kvmppc_emulate_slbmfev);
+	kvmppc_emulate_register_x(XOP_DCBA, 0, kvmppc_emulate_xnop);
+	kvmppc_emulate_register_x(XOP_DCBZ, 0, kvmppc_emulate_dcbz);
 
-	kvmppc_emulate_register_spr(SPRN_SDR1, EMUL_FORM_SPR,
+	kvmppc_emulate_register_spr(SPRN_SDR1, 0,
 				    kvmppc_spr_read_sdr1,
 				    kvmppc_spr_write_sdr1);
-	kvmppc_emulate_register_spr(SPRN_DSISR, EMUL_FORM_SPR,
+	kvmppc_emulate_register_spr(SPRN_DSISR, 0,
 				    kvmppc_spr_read_dsisr,
 				    kvmppc_spr_write_dsisr);
-	kvmppc_emulate_register_spr(SPRN_DAR, EMUL_FORM_SPR,
+	kvmppc_emulate_register_spr(SPRN_DAR, 0,
 				    kvmppc_spr_read_dar,
 				    kvmppc_spr_write_dar);
-	kvmppc_emulate_register_spr(SPRN_HIOR, EMUL_FORM_SPR,
+	kvmppc_emulate_register_spr(SPRN_HIOR, 0,
 				    kvmppc_spr_read_hior,
 				    kvmppc_spr_write_hior);
 	for (i = 0; i < ARRAY_SIZE(bat_spr); i++)
-		kvmppc_emulate_register_spr(bat_spr[i], EMUL_FORM_SPR,
+		kvmppc_emulate_register_spr(bat_spr[i], 0,
 					    kvmppc_spr_read_bat,
 					    kvmppc_spr_write_bat);
-	kvmppc_emulate_register_spr(SPRN_HID0, EMUL_FORM_SPR,
+	kvmppc_emulate_register_spr(SPRN_HID0, 0,
 				    kvmppc_spr_read_hid0,
 				    kvmppc_spr_write_hid0);
-	kvmppc_emulate_register_spr(SPRN_HID1, EMUL_FORM_SPR,
+	kvmppc_emulate_register_spr(SPRN_HID1, 0,
 				    kvmppc_spr_read_hid1,
 				    kvmppc_spr_write_hid1);
-	kvmppc_emulate_register_spr(SPRN_HID2, EMUL_FORM_SPR,
+	kvmppc_emulate_register_spr(SPRN_HID2, 0,
 				    kvmppc_spr_read_hid2,
 				    kvmppc_spr_write_hid2);
-	kvmppc_emulate_register_spr(SPRN_HID2_GEKKO, EMUL_FORM_SPR,
+	kvmppc_emulate_register_spr(SPRN_HID2_GEKKO, 0,
 				    kvmppc_spr_read_hid2,
 				    kvmppc_spr_write_hid2_gekko);
-	kvmppc_emulate_register_spr(SPRN_HID4, EMUL_FORM_SPR,
+	kvmppc_emulate_register_spr(SPRN_HID4, 0,
 				    kvmppc_spr_read_hid4,
 				    kvmppc_spr_write_hid4);
-	kvmppc_emulate_register_spr(SPRN_HID4_GEKKO, EMUL_FORM_SPR,
+	kvmppc_emulate_register_spr(SPRN_HID4_GEKKO, 0,
 				    kvmppc_spr_read_hid4,
 				    kvmppc_spr_write_hid4);
-	kvmppc_emulate_register_spr(SPRN_HID5, EMUL_FORM_SPR,
+	kvmppc_emulate_register_spr(SPRN_HID5, 0,
 				    kvmppc_spr_read_hid5,
 				    kvmppc_spr_write_hid5);
-	kvmppc_emulate_register_spr(SPRN_CFAR, EMUL_FORM_SPR,
+	kvmppc_emulate_register_spr(SPRN_CFAR, 0,
 				    kvmppc_spr_read_zero, NULL);
-	kvmppc_emulate_register_spr(SPRN_PURR, EMUL_FORM_SPR,
+	kvmppc_emulate_register_spr(SPRN_PURR, 0,
 				    kvmppc_spr_read_zero, NULL);
 	for (i = 0; i < 8; i++)
-		kvmppc_emulate_register_spr(SPRN_GQR0 + i, EMUL_FORM_SPR,
+		kvmppc_emulate_register_spr(SPRN_GQR0 + i, 0,
 					    kvmppc_spr_read_gqr,
 					    kvmppc_spr_write_gqr);
 	for (i = 0; i < ARRAY_SIZE(noop_spr); i++)
-		kvmppc_emulate_register_spr(noop_spr[i], EMUL_FORM_SPR,
+		kvmppc_emulate_register_spr(noop_spr[i], 0,
 					    kvmppc_spr_read_zero,
 					    kvmppc_spr_write_noop);
 }

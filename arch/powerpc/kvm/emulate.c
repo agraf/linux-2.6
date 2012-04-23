@@ -728,92 +728,69 @@ void __init kvmppc_emulate_init(void)
 				   GFP_KERNEL);
 
 	kvmppc_emulate_register(31, EMUL_FORM_X, NULL);
-	kvmppc_emulate_register_x(OP_31_XOP_LWZX, EMUL_FORM_X,
-				  kvmppc_emulate_lwzx);
-	kvmppc_emulate_register_x(OP_31_XOP_LBZX, EMUL_FORM_X,
-				  kvmppc_emulate_lbzx);
-	kvmppc_emulate_register_x(OP_31_XOP_LBZUX, EMUL_FORM_X,
-				  kvmppc_emulate_lbzux);
-	kvmppc_emulate_register_x(OP_31_XOP_STWX, EMUL_FORM_X,
-				  kvmppc_emulate_stwx);
-	kvmppc_emulate_register_x(OP_31_XOP_STBX, EMUL_FORM_X,
-				  kvmppc_emulate_stbx);
-	kvmppc_emulate_register_x(OP_31_XOP_STBUX, EMUL_FORM_X,
-				  kvmppc_emulate_stbux);
-	kvmppc_emulate_register_x(OP_31_XOP_LHAX, EMUL_FORM_X,
-				  kvmppc_emulate_lhax);
-	kvmppc_emulate_register_x(OP_31_XOP_LHZX, EMUL_FORM_X,
-				  kvmppc_emulate_lhzx);
-	kvmppc_emulate_register_x(OP_31_XOP_LHZUX, EMUL_FORM_X,
-				  kvmppc_emulate_lhzux);
-	kvmppc_emulate_register_x(OP_31_XOP_STHX, EMUL_FORM_X,
-				  kvmppc_emulate_sthx);
-	kvmppc_emulate_register_x(OP_31_XOP_STHUX, EMUL_FORM_X,
-				  kvmppc_emulate_sthux);
-	kvmppc_emulate_register_x(OP_31_XOP_DCBI, EMUL_FORM_X,
-				  kvmppc_emulate_dcbi);
-	kvmppc_emulate_register_x(OP_31_XOP_LWBRX, EMUL_FORM_X,
-				  kvmppc_emulate_lwbrx);
-	kvmppc_emulate_register_x(OP_31_XOP_TLBSYNC, EMUL_FORM_X,
-				  kvmppc_emulate_tlbsync);
-	kvmppc_emulate_register_x(OP_31_XOP_STWBRX, EMUL_FORM_X,
-				  kvmppc_emulate_stwbrx);
-	kvmppc_emulate_register_x(OP_31_XOP_LHBRX, EMUL_FORM_X,
-				  kvmppc_emulate_lhbrx);
-	kvmppc_emulate_register_x(OP_31_XOP_STHBRX, EMUL_FORM_X,
-				  kvmppc_emulate_sthbrx);
-	kvmppc_emulate_register_x(OP_31_XOP_TRAP, EMUL_FORM_X,
-				  kvmppc_emulate_trap_x);
+	kvmppc_emulate_register_x(OP_31_XOP_LWZX, 0, kvmppc_emulate_lwzx);
+	kvmppc_emulate_register_x(OP_31_XOP_LBZX, 0, kvmppc_emulate_lbzx);
+	kvmppc_emulate_register_x(OP_31_XOP_LBZUX, 0, kvmppc_emulate_lbzux);
+	kvmppc_emulate_register_x(OP_31_XOP_STWX, 0, kvmppc_emulate_stwx);
+	kvmppc_emulate_register_x(OP_31_XOP_STBX, 0, kvmppc_emulate_stbx);
+	kvmppc_emulate_register_x(OP_31_XOP_STBUX, 0, kvmppc_emulate_stbux);
+	kvmppc_emulate_register_x(OP_31_XOP_LHAX, 0, kvmppc_emulate_lhax);
+	kvmppc_emulate_register_x(OP_31_XOP_LHZX, 0, kvmppc_emulate_lhzx);
+	kvmppc_emulate_register_x(OP_31_XOP_LHZUX, 0, kvmppc_emulate_lhzux);
+	kvmppc_emulate_register_x(OP_31_XOP_STHX, 0, kvmppc_emulate_sthx);
+	kvmppc_emulate_register_x(OP_31_XOP_STHUX, 0, kvmppc_emulate_sthux);
+	kvmppc_emulate_register_x(OP_31_XOP_DCBI, 0, kvmppc_emulate_dcbi);
+	kvmppc_emulate_register_x(OP_31_XOP_LWBRX, 0, kvmppc_emulate_lwbrx);
+	kvmppc_emulate_register_x(OP_31_XOP_TLBSYNC, 0, kvmppc_emulate_tlbsync);
+	kvmppc_emulate_register_x(OP_31_XOP_STWBRX, 0, kvmppc_emulate_stwbrx);
+	kvmppc_emulate_register_x(OP_31_XOP_LHBRX, 0, kvmppc_emulate_lhbrx);
+	kvmppc_emulate_register_x(OP_31_XOP_STHBRX, 0, kvmppc_emulate_sthbrx);
+	kvmppc_emulate_register_x(OP_31_XOP_TRAP, 0, kvmppc_emulate_trap_x);
 #ifdef CONFIG_64BIT
-	kvmppc_emulate_register_x(OP_31_XOP_TRAP_64, EMUL_FORM_X,
-				  kvmppc_emulate_trap_x);
+	kvmppc_emulate_register_x(OP_31_XOP_TRAP_64, 0, kvmppc_emulate_trap_x);
 #endif
-	kvmppc_emulate_register_x(OP_31_XOP_MFMSR, EMUL_FORM_X,
-				  kvmppc_emulate_mfmsr);
-	kvmppc_emulate_register_x(OP_31_XOP_MTMSR, EMUL_FORM_X,
-				  kvmppc_emulate_mtmsr);
+	kvmppc_emulate_register_x(OP_31_XOP_MFMSR, 0, kvmppc_emulate_mfmsr);
+	kvmppc_emulate_register_x(OP_31_XOP_MTMSR, 0, kvmppc_emulate_mtmsr);
 
 	/* SPRs multiplex on top of op31 again */
 	kvmppc_list_spr_r = kzalloc(sizeof(struct kvmppc_opentry) * 0x400,
 				    GFP_KERNEL);
 	kvmppc_list_spr_w = kzalloc(sizeof(struct kvmppc_opentry) * 0x400,
 				    GFP_KERNEL);
-	kvmppc_emulate_register_x(OP_31_XOP_MFSPR, EMUL_FORM_X,
-				  kvmppc_emulate_mfspr);
-	kvmppc_emulate_register_x(OP_31_XOP_MTSPR, EMUL_FORM_X,
-				  kvmppc_emulate_mtspr);
+	kvmppc_emulate_register_x(OP_31_XOP_MFSPR, 0, kvmppc_emulate_mfspr);
+	kvmppc_emulate_register_x(OP_31_XOP_MTSPR, 0, kvmppc_emulate_mtspr);
 
-	kvmppc_emulate_register_spr(SPRN_SRR0, EMUL_FORM_SPR,
+	kvmppc_emulate_register_spr(SPRN_SRR0, 0,
 				    kvmppc_spr_read_srr0,
 				    kvmppc_spr_write_srr0);
-	kvmppc_emulate_register_spr(SPRN_SRR1, EMUL_FORM_SPR,
+	kvmppc_emulate_register_spr(SPRN_SRR1, 0,
 				    kvmppc_spr_read_srr1,
 				    kvmppc_spr_write_srr1);
-	kvmppc_emulate_register_spr(SPRN_PVR, EMUL_FORM_SPR,
+	kvmppc_emulate_register_spr(SPRN_PVR, 0,
 				    kvmppc_spr_read_pvr, NULL);
-	kvmppc_emulate_register_spr(SPRN_PIR, EMUL_FORM_SPR,
+	kvmppc_emulate_register_spr(SPRN_PIR, 0,
 				    kvmppc_spr_read_pir, NULL);
-	kvmppc_emulate_register_spr(SPRN_MSSSR0, EMUL_FORM_SPR,
+	kvmppc_emulate_register_spr(SPRN_MSSSR0, 0,
 				    kvmppc_spr_read_msssr0,
 				    kvmppc_spr_write_noop);
-	kvmppc_emulate_register_spr(SPRN_TBWL, EMUL_FORM_SPR,
+	kvmppc_emulate_register_spr(SPRN_TBWL, 0,
 				    NULL, kvmppc_spr_write_tb);
-	kvmppc_emulate_register_spr(SPRN_TBWU, EMUL_FORM_SPR,
+	kvmppc_emulate_register_spr(SPRN_TBWU, 0,
 				    NULL, kvmppc_spr_write_tb);
-	kvmppc_emulate_register_spr(SPRN_SPRG0, EMUL_FORM_SPR,
+	kvmppc_emulate_register_spr(SPRN_SPRG0, 0,
 				    kvmppc_spr_read_sprg0,
 				    kvmppc_spr_write_sprg0);
-	kvmppc_emulate_register_spr(SPRN_SPRG1, EMUL_FORM_SPR,
+	kvmppc_emulate_register_spr(SPRN_SPRG1, 0,
 				    kvmppc_spr_read_sprg1,
 				    kvmppc_spr_write_sprg1);
-	kvmppc_emulate_register_spr(SPRN_SPRG2, EMUL_FORM_SPR,
+	kvmppc_emulate_register_spr(SPRN_SPRG2, 0,
 				    kvmppc_spr_read_sprg2,
 				    kvmppc_spr_write_sprg2);
-	kvmppc_emulate_register_spr(SPRN_SPRG3, EMUL_FORM_SPR,
+	kvmppc_emulate_register_spr(SPRN_SPRG3, 0,
 				    kvmppc_spr_read_sprg3,
 				    kvmppc_spr_write_sprg3);
 	/* Note: SPRG4-7 are user-readable, so we don't get a trap. */
-	kvmppc_emulate_register_spr(SPRN_DEC, EMUL_FORM_SPR,
+	kvmppc_emulate_register_spr(SPRN_DEC, 0,
 				    kvmppc_spr_read_dec,
 				    kvmppc_spr_write_dec);
 }

@@ -248,32 +248,30 @@ void __init kvmppc_emulate_booke_init(void)
 	 * will return the wrong result if called for them in another context
 	 * (such as debugging).
 	 */
-	kvmppc_emulate_register_x(OP_31_XOP_WRTEE, EMUL_FORM_X,
-				  kvmppc_emulate_wrtee);
-	kvmppc_emulate_register_x(OP_31_XOP_WRTEEI, EMUL_FORM_X,
-				  kvmppc_emulate_wrteei);
-	kvmppc_emulate_register_spr(SPRN_DEAR, EMUL_FORM_SPR,
+	kvmppc_emulate_register_x(OP_31_XOP_WRTEE, 0, kvmppc_emulate_wrtee);
+	kvmppc_emulate_register_x(OP_31_XOP_WRTEEI, 0, kvmppc_emulate_wrteei);
+	kvmppc_emulate_register_spr(SPRN_DEAR, 0,
 				    kvmppc_spr_read_dear,
 				    kvmppc_spr_write_dear);
-	kvmppc_emulate_register_spr(SPRN_ESR, EMUL_FORM_SPR,
+	kvmppc_emulate_register_spr(SPRN_ESR, 0,
 				    kvmppc_spr_read_esr,
 				    kvmppc_spr_write_esr);
-	kvmppc_emulate_register_spr(SPRN_DBCR0, EMUL_FORM_SPR,
+	kvmppc_emulate_register_spr(SPRN_DBCR0, 0,
 				    kvmppc_spr_read_dbcr0,
 				    kvmppc_spr_write_dbcr0);
-	kvmppc_emulate_register_spr(SPRN_DBCR1, EMUL_FORM_SPR,
+	kvmppc_emulate_register_spr(SPRN_DBCR1, 0,
 				    kvmppc_spr_read_dbcr1,
 				    kvmppc_spr_write_dbcr1);
-	kvmppc_emulate_register_spr(SPRN_DBSR, EMUL_FORM_SPR,
+	kvmppc_emulate_register_spr(SPRN_DBSR, 0,
 				    kvmppc_spr_read_dbsr,
 				    kvmppc_spr_write_dbsr);
-	kvmppc_emulate_register_spr(SPRN_TSR, EMUL_FORM_SPR,
+	kvmppc_emulate_register_spr(SPRN_TSR, 0,
 				    kvmppc_spr_read_tsr,
 				    kvmppc_spr_write_tsr);
-	kvmppc_emulate_register_spr(SPRN_TCR, EMUL_FORM_SPR,
+	kvmppc_emulate_register_spr(SPRN_TCR, 0,
 				    kvmppc_spr_read_tcr,
 				    kvmppc_spr_write_tcr);
-	kvmppc_emulate_register_spr(SPRN_IVPR, EMUL_FORM_SPR,
+	kvmppc_emulate_register_spr(SPRN_IVPR, 0,
 				    kvmppc_spr_read_ivpr,
 				    kvmppc_spr_write_ivpr);
 	/*
@@ -281,65 +279,65 @@ void __init kvmppc_emulate_booke_init(void)
 	 * These values are loaded into the real SPRGs when resuming the
 	 * guest (PR-mode only).
 	 */
-	kvmppc_emulate_register_spr(SPRN_SPRG4, EMUL_FORM_SPR,
+	kvmppc_emulate_register_spr(SPRN_SPRG4, 0,
 				    kvmppc_spr_read_sprg4,
 				    kvmppc_spr_write_sprg4);
-	kvmppc_emulate_register_spr(SPRN_SPRG5, EMUL_FORM_SPR,
+	kvmppc_emulate_register_spr(SPRN_SPRG5, 0,
 				    kvmppc_spr_read_sprg5,
 				    kvmppc_spr_write_sprg5);
-	kvmppc_emulate_register_spr(SPRN_SPRG6, EMUL_FORM_SPR,
+	kvmppc_emulate_register_spr(SPRN_SPRG6, 0,
 				    kvmppc_spr_read_sprg6,
 				    kvmppc_spr_write_sprg6);
-	kvmppc_emulate_register_spr(SPRN_SPRG7, EMUL_FORM_SPR,
+	kvmppc_emulate_register_spr(SPRN_SPRG7, 0,
 				    kvmppc_spr_read_sprg7,
 				    kvmppc_spr_write_sprg7);
 
-	kvmppc_emulate_register_spr(SPRN_IVOR0, EMUL_FORM_SPR,
+	kvmppc_emulate_register_spr(SPRN_IVOR0, 0,
 				    kvmppc_spr_read_ivor0_15,
 				    kvmppc_spr_write_ivor0_15);
-	kvmppc_emulate_register_spr(SPRN_IVOR1, EMUL_FORM_SPR,
+	kvmppc_emulate_register_spr(SPRN_IVOR1, 0,
 				    kvmppc_spr_read_ivor0_15,
 				    kvmppc_spr_write_ivor0_15);
-	kvmppc_emulate_register_spr(SPRN_IVOR2, EMUL_FORM_SPR,
+	kvmppc_emulate_register_spr(SPRN_IVOR2, 0,
 				    kvmppc_spr_read_ivor0_15,
 				    kvmppc_spr_write_ivor2);
-	kvmppc_emulate_register_spr(SPRN_IVOR3, EMUL_FORM_SPR,
+	kvmppc_emulate_register_spr(SPRN_IVOR3, 0,
 				    kvmppc_spr_read_ivor0_15,
 				    kvmppc_spr_write_ivor0_15);
-	kvmppc_emulate_register_spr(SPRN_IVOR4, EMUL_FORM_SPR,
+	kvmppc_emulate_register_spr(SPRN_IVOR4, 0,
 				    kvmppc_spr_read_ivor0_15,
 				    kvmppc_spr_write_ivor0_15);
-	kvmppc_emulate_register_spr(SPRN_IVOR5, EMUL_FORM_SPR,
+	kvmppc_emulate_register_spr(SPRN_IVOR5, 0,
 				    kvmppc_spr_read_ivor0_15,
 				    kvmppc_spr_write_ivor0_15);
-	kvmppc_emulate_register_spr(SPRN_IVOR6, EMUL_FORM_SPR,
+	kvmppc_emulate_register_spr(SPRN_IVOR6, 0,
 				    kvmppc_spr_read_ivor0_15,
 				    kvmppc_spr_write_ivor0_15);
-	kvmppc_emulate_register_spr(SPRN_IVOR7, EMUL_FORM_SPR,
+	kvmppc_emulate_register_spr(SPRN_IVOR7, 0,
 				    kvmppc_spr_read_ivor0_15,
 				    kvmppc_spr_write_ivor0_15);
-	kvmppc_emulate_register_spr(SPRN_IVOR8, EMUL_FORM_SPR,
+	kvmppc_emulate_register_spr(SPRN_IVOR8, 0,
 				    kvmppc_spr_read_ivor0_15,
 				    kvmppc_spr_write_ivor8);
-	kvmppc_emulate_register_spr(SPRN_IVOR9, EMUL_FORM_SPR,
+	kvmppc_emulate_register_spr(SPRN_IVOR9, 0,
 				    kvmppc_spr_read_ivor0_15,
 				    kvmppc_spr_write_ivor0_15);
-	kvmppc_emulate_register_spr(SPRN_IVOR10, EMUL_FORM_SPR,
+	kvmppc_emulate_register_spr(SPRN_IVOR10, 0,
 				    kvmppc_spr_read_ivor0_15,
 				    kvmppc_spr_write_ivor0_15);
-	kvmppc_emulate_register_spr(SPRN_IVOR11, EMUL_FORM_SPR,
+	kvmppc_emulate_register_spr(SPRN_IVOR11, 0,
 				    kvmppc_spr_read_ivor0_15,
 				    kvmppc_spr_write_ivor0_15);
-	kvmppc_emulate_register_spr(SPRN_IVOR12, EMUL_FORM_SPR,
+	kvmppc_emulate_register_spr(SPRN_IVOR12, 0,
 				    kvmppc_spr_read_ivor0_15,
 				    kvmppc_spr_write_ivor0_15);
-	kvmppc_emulate_register_spr(SPRN_IVOR13, EMUL_FORM_SPR,
+	kvmppc_emulate_register_spr(SPRN_IVOR13, 0,
 				    kvmppc_spr_read_ivor0_15,
 				    kvmppc_spr_write_ivor0_15);
-	kvmppc_emulate_register_spr(SPRN_IVOR14, EMUL_FORM_SPR,
+	kvmppc_emulate_register_spr(SPRN_IVOR14, 0,
 				    kvmppc_spr_read_ivor0_15,
 				    kvmppc_spr_write_ivor0_15);
-	kvmppc_emulate_register_spr(SPRN_IVOR15, EMUL_FORM_SPR,
+	kvmppc_emulate_register_spr(SPRN_IVOR15, 0,
 				    kvmppc_spr_read_ivor0_15,
 				    kvmppc_spr_write_ivor0_15);
 }
