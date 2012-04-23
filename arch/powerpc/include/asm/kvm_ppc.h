@@ -131,11 +131,6 @@ extern void kvmppc_core_queue_external(struct kvm_vcpu *vcpu,
 extern void kvmppc_core_dequeue_external(struct kvm_vcpu *vcpu,
                                          struct kvm_interrupt *irq);
 
-extern int kvmppc_core_emulate_op(struct kvm_run *run, struct kvm_vcpu *vcpu,
-                                  unsigned int op, int *advance);
-extern int kvmppc_core_emulate_mtspr(struct kvm_vcpu *vcpu, int sprn, int rs);
-extern int kvmppc_core_emulate_mfspr(struct kvm_vcpu *vcpu, int sprn, int rt);
-
 extern int kvmppc_booke_init(void);
 extern void kvmppc_booke_exit(void);
 

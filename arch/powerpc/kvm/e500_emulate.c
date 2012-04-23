@@ -84,45 +84,6 @@ static int kvmppc_emulate_msgsnd(struct kvm_vcpu *vcpu, int rt, int ra, int rb,
 }
 #endif
 
-int kvmppc_core_emulate_op(struct kvm_run *run, struct kvm_vcpu *vcpu,
-                           unsigned int inst, int *advance)
-{
-	int emulated = EMULATE_DONE;
-	int ra;
-	int rb;
-	int rt;
-
-	switch (get_op(inst)) {
-	case 31:
-		switch (get_xop(inst)) {
-
-		default:
-			emulated = EMULATE_FAIL;
-		}
-
-		break;
-
-	default:
-		emulated = EMULATE_FAIL;
-	}
-
-	return emulated;
-}
-
-int kvmppc_core_emulate_mtspr(struct kvm_vcpu *vcpu, int sprn, int rs)
-{
-	int emulated = EMULATE_DONE;
-
-	return emulated;
-}
-
-int kvmppc_core_emulate_mfspr(struct kvm_vcpu *vcpu, int sprn, int rt)
-{
-	int emulated = EMULATE_DONE;
-
-	return emulated;
-}
-
 static int kvmppc_emulate_tlbre(struct kvm_vcpu *vcpu, int rt, int ra, int rb,
 				int rc)
 {

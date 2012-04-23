@@ -246,25 +246,6 @@ static int kvmppc_emulate_dcbz(struct kvm_vcpu *vcpu, int rt, int ra, int rb,
 	return ret;
 }
 
-int kvmppc_core_emulate_op(struct kvm_run *run, struct kvm_vcpu *vcpu,
-                           unsigned int inst, int *advance)
-{
-	int emulated = EMULATE_DONE;
-
-	switch (get_op(inst)) {
-	case 31:
-		switch (get_xop(inst)) {
-		default:
-			emulated = EMULATE_FAIL;
-		}
-		break;
-	default:
-		emulated = EMULATE_FAIL;
-	}
-
-	return emulated;
-}
-
 void kvmppc_set_bat(struct kvm_vcpu *vcpu, struct kvmppc_bat *bat, bool upper,
                     u32 val)
 {
@@ -499,41 +480,6 @@ static int kvmppc_spr_write_gqr(struct kvm_vcpu *vcpu, int sprn, ulong val)
 static int kvmppc_spr_write_noop(struct kvm_vcpu *vcpu, int sprn, ulong val)
 {
 	return EMULATE_DONE;
-}
-
-int kvmppc_core_emulate_mtspr(struct kvm_vcpu *vcpu, int sprn, int rs)
-{
-	int emulated = EMULATE_DONE;
-	ulong spr_val = kvmppc_get_gpr(vcpu, rs);
-
-	switch (sprn) {
-unprivileged:
-	default:
-		printk(KERN_INFO "KVM: invalid SPR write: %d\n", sprn);
-#ifndef DEBUG_SPR
-		emulated = EMULATE_FAIL;
-#endif
-		break;
-	}
-
-	return emulated;
-}
-
-int kvmppc_core_emulate_mfspr(struct kvm_vcpu *vcpu, int sprn, int rt)
-{
-	int emulated = EMULATE_DONE;
-
-	switch (sprn) {
-	default:
-unprivileged:
-		printk(KERN_INFO "KVM: invalid SPR read: %d\n", sprn);
-#ifndef DEBUG_SPR
-		emulated = EMULATE_FAIL;
-#endif
-		break;
-	}
-
-	return emulated;
 }
 
 u32 kvmppc_alignment_dsisr(struct kvm_vcpu *vcpu, unsigned int inst)

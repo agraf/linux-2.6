@@ -1466,23 +1466,6 @@ void kvmppc_mmu_pte_pflush(struct kvm_vcpu *vcpu, ulong pa_start, ulong pa_end)
 {
 }
 
-/* We don't need to emulate any privileged instructions or dcbz */
-int kvmppc_core_emulate_op(struct kvm_run *run, struct kvm_vcpu *vcpu,
-                           unsigned int inst, int *advance)
-{
-	return EMULATE_FAIL;
-}
-
-int kvmppc_core_emulate_mtspr(struct kvm_vcpu *vcpu, int sprn, int rs)
-{
-	return EMULATE_FAIL;
-}
-
-int kvmppc_core_emulate_mfspr(struct kvm_vcpu *vcpu, int sprn, int rt)
-{
-	return EMULATE_FAIL;
-}
-
 static int kvmppc_book3s_hv_init(void)
 {
 	int r;

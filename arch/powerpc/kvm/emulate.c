@@ -623,83 +623,28 @@ static int kvmppc_spr_write_dec(struct kvm_vcpu *vcpu, int sprn, ulong val)
 int kvmppc_emulate_instruction(struct kvm_run *run, struct kvm_vcpu *vcpu)
 {
 	u32 inst = kvmppc_get_last_inst(vcpu);
-	int ra;
-	int rb;
-	int rs;
-	int rt;
-	int sprn;
 	enum emulation_result emulated = EMULATE_DONE;
-	int advance = 1;
+	struct kvmppc_opentry *e;
 
 	/* this default type might be overwritten by subcategories */
 	kvmppc_set_exit_type(vcpu, EMULATED_INST_EXITS);
 
 	pr_debug("Emulating opcode %d / %d\n", get_op(inst), get_xop(inst));
 
-	switch (get_op(inst)) {
-	case 31:
-		switch (get_xop(inst)) {
-		case OP_31_XOP_MFSPR:
-			sprn = get_sprn(inst);
-			rt = get_rt(inst);
-
-			switch (sprn) {
-			default:
-				emulated = kvmppc_core_emulate_mfspr(vcpu, sprn, rt);
-				if (emulated == EMULATE_FAIL)
-					goto use_table;
-				break;
-			}
-			kvmppc_set_exit_type(vcpu, EMULATED_MFSPR_EXITS);
-			break;
-
-		case OP_31_XOP_MTSPR:
-			sprn = get_sprn(inst);
-			rs = get_rs(inst);
-			switch (sprn) {
-			default:
-				emulated = kvmppc_core_emulate_mtspr(vcpu, sprn, rs);
-				if (emulated == EMULATE_FAIL)
-					goto use_table;
-				break;
-			}
-			kvmppc_set_exit_type(vcpu, EMULATED_MTSPR_EXITS);
-			break;
-
-		default:
-			goto use_table;
-		}
-		break;
-
-	default: {
-		struct kvmppc_opentry *e;
-use_table:
-		e = &kvmppc_list_op[get_op(inst)];
-		if (e->func) {
-			return kvmppc_emulate_entry(vcpu, e, inst);
-		} else {
-			emulated = EMULATE_FAIL;
-		}
-	}
+	e = &kvmppc_list_op[get_op(inst)];
+	if (e->func) {
+		emulated = kvmppc_emulate_entry(vcpu, e, inst);
+	} else {
+		emulated = EMULATE_FAIL;
 	}
 
 	if (emulated == EMULATE_FAIL) {
-		emulated = kvmppc_core_emulate_op(run, vcpu, inst, &advance);
-		if (emulated == EMULATE_AGAIN) {
-			advance = 0;
-		} else if (emulated == EMULATE_FAIL) {
-			advance = 0;
-			printk(KERN_ERR "Couldn't emulate instruction 0x%08x "
-			       "(op %d xop %d)\n", inst, get_op(inst), get_xop(inst));
-			kvmppc_core_queue_program(vcpu, 0);
-		}
+		printk(KERN_ERR "Couldn't emulate instruction 0x%08x "
+		       "(op %d xop %d)\n", inst, get_op(inst), get_xop(inst));
+		kvmppc_core_queue_program(vcpu, 0);
 	}
 
 	trace_kvm_ppc_instr(inst, kvmppc_get_pc(vcpu), emulated);
-
-	/* Advance past emulated instruction. */
-	if (advance)
-		kvmppc_set_pc(vcpu, kvmppc_get_pc(vcpu) + 4);
 
 	return emulated;
 }
