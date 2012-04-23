@@ -47,7 +47,8 @@ static int dbell2prio(ulong param)
 	return prio;
 }
 
-static int kvmppc_e500_emul_msgclr(struct kvm_vcpu *vcpu, int rb)
+static int kvmppc_emulate_msgclr(struct kvm_vcpu *vcpu, int rt, int ra, int rb,
+				 int rc)
 {
 	ulong param = vcpu->arch.gpr[rb];
 	int prio = dbell2prio(param);
@@ -94,12 +95,6 @@ int kvmppc_core_emulate_op(struct kvm_run *run, struct kvm_vcpu *vcpu,
 	switch (get_op(inst)) {
 	case 31:
 		switch (get_xop(inst)) {
-
-#ifdef CONFIG_KVM_E500MC
-		case XOP_MSGCLR:
-			emulated = kvmppc_e500_emul_msgclr(vcpu, get_rb(inst));
-			break;
-#endif
 
 		default:
 			emulated = EMULATE_FAIL;
@@ -317,5 +312,7 @@ void __init kvmppc_emulate_e500_init(void)
 #ifdef CONFIG_KVM_E500MC
 	kvmppc_emulate_register_x(XOP_MSGSND, EMUL_FORM_X,
 				  kvmppc_emulate_msgsnd);
+	kvmppc_emulate_register_x(XOP_MSGCLR, EMUL_FORM_X,
+				  kvmppc_emulate_msgclr);
 #endif
 }
