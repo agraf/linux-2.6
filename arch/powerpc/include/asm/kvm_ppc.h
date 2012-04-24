@@ -49,7 +49,6 @@ enum emulation_result {
 
 struct kvmppc_opentry {
 	int (*func);
-	int flags;
 };
 
 #define EMUL_FORM_MASK		0x1f
