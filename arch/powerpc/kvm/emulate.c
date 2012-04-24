@@ -163,7 +163,7 @@ static int kvmppc_emulate_entry(struct kvm_vcpu *vcpu, struct kvmppc_opentry *e,
 	}
 	}
 
-	if (r == EMULATE_DONE)
+	if (!(r & EMULATE_KEEPNIP))
 		kvmppc_set_pc(vcpu, kvmppc_get_pc(vcpu) + 4);
 	if (r == EMULATE_DONE_KEEPNIP)
 		r = EMULATE_DONE;

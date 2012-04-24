@@ -37,13 +37,14 @@
 #include <asm/paca.h>
 #endif
 
+#define EMULATE_KEEPNIP		0x80
 enum emulation_result {
-	EMULATE_DONE,         /* no further processing */
-	EMULATE_DO_MMIO,      /* kvm_run filled with MMIO request */
-	EMULATE_DO_DCR,       /* kvm_run filled with DCR request */
-	EMULATE_FAIL,         /* can't emulate this instruction */
-	EMULATE_AGAIN,        /* something went wrong. go again */
-	EMULATE_DONE_KEEPNIP, /* no further processing, but NIP stays */
+	EMULATE_DONE         = 0x0,               /* no further processing */
+	EMULATE_DO_MMIO      = 0x1, /* kvm_run filled with MMIO request */
+	EMULATE_DO_DCR       = 0x2, /* kvm_run filled with DCR request */
+	EMULATE_FAIL         = 0x3 | EMULATE_KEEPNIP, /* can't emulate */
+	EMULATE_AGAIN        = 0x4 | EMULATE_KEEPNIP, /* breakage. go again */
+	EMULATE_DONE_KEEPNIP = 0x0 | EMULATE_KEEPNIP, /* done, but NIP stays */
 };
 
 struct kvmppc_opentry {
