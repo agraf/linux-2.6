@@ -632,7 +632,7 @@ int kvmppc_emulate_instruction(struct kvm_run *run, struct kvm_vcpu *vcpu)
 	pr_debug("Emulating opcode %d / %d\n", get_op(inst), get_xop(inst));
 
 	e = &kvmppc_list_op[get_op(inst)];
-	if (e->func) {
+	if (e->flags) {
 		emulated = kvmppc_emulate_entry(vcpu, e, inst);
 	} else {
 		emulated = EMULATE_FAIL;
