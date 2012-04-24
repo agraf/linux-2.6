@@ -140,37 +140,6 @@ u32 kvmppc_get_dec(struct kvm_vcpu *vcpu, u64 tb)
 	return vcpu->arch.dec - jd;
 }
 
-static int kvmppc_emulate_entry(struct kvm_vcpu *vcpu, struct kvmppc_opentry *e,
-				u32 inst)
-{
-	int r = EMULATE_FAIL;
-
-	switch (e->flags & EMUL_FORM_MASK) {
-	case EMUL_FORM_D: {
-		int (*func)(struct kvm_vcpu *, int, int, int) = (void*)e->func;
-		r = func(vcpu, get_rt(inst), get_ra(inst), get_d(inst));
-		break;
-	}
-	case EMUL_FORM_X: {
-		int (*func)(struct kvm_vcpu *, int, int, int, int);
-		func = (void*)kvmppc_list_op31[get_xop(inst)].func;
-		if (func)
-			r = func(vcpu, get_rt(inst), get_ra(inst), get_rb(inst),
-				 get_rc(inst));
-		else
-			r = EMULATE_FAIL;
-		break;
-	}
-	}
-
-	if (!(r & EMULATE_KEEPNIP))
-		kvmppc_set_pc(vcpu, kvmppc_get_pc(vcpu) + 4);
-	if (r == EMULATE_DONE_KEEPNIP)
-		r = EMULATE_DONE;
-
-	return r;
-}
-
 static int kvmppc_emulate_mtspr(struct kvm_vcpu *vcpu, int rs, int ra, int rb,
 				int rc)
 {
@@ -623,7 +592,7 @@ static int kvmppc_spr_write_dec(struct kvm_vcpu *vcpu, int sprn, ulong val)
 int kvmppc_emulate_instruction(struct kvm_run *run, struct kvm_vcpu *vcpu)
 {
 	u32 inst = kvmppc_get_last_inst(vcpu);
-	enum emulation_result emulated = EMULATE_DONE;
+	enum emulation_result r = EMULATE_DONE;
 	struct kvmppc_opentry *e;
 
 	/* this default type might be overwritten by subcategories */
@@ -631,22 +600,57 @@ int kvmppc_emulate_instruction(struct kvm_run *run, struct kvm_vcpu *vcpu)
 
 	pr_debug("Emulating opcode %d / %d\n", get_op(inst), get_xop(inst));
 
-	e = &kvmppc_list_op[get_op(inst)];
-	if (e->flags) {
-		emulated = kvmppc_emulate_entry(vcpu, e, inst);
-	} else {
-		emulated = EMULATE_FAIL;
+	switch (get_op(inst)) {
+	case 31:
+		switch(get_xop(inst)) {
+		case OP_31_XOP_MFSPR:
+			r = kvmppc_emulate_mfspr(vcpu, get_rt(inst),
+						 get_ra(inst), get_rb(inst),
+						 get_rc(inst));
+			break;
+		case OP_31_XOP_MTSPR:
+			r = kvmppc_emulate_mtspr(vcpu, get_rt(inst),
+						 get_ra(inst), get_rb(inst),
+						 get_rc(inst));
+			break;
+		default: {
+			int (*func)(struct kvm_vcpu *, int, int, int, int);
+			func = (void*)kvmppc_list_op31[get_xop(inst)].func;
+			if (func)
+				r = func(vcpu, get_rt(inst), get_ra(inst),
+					 get_rb(inst), get_rc(inst));
+			else
+				r = EMULATE_FAIL;
+			break;
+		}
+		}
+		break;
+	default: {
+		int (*func)(struct kvm_vcpu *, int, int, int);
+		e = &kvmppc_list_op[get_op(inst)];
+		if (e->flags) {
+			func = e->func;
+			r = func(vcpu, get_rt(inst), get_ra(inst), get_d(inst));
+		} else {
+			r = EMULATE_FAIL;
+		}
+	}
 	}
 
-	if (emulated == EMULATE_FAIL) {
+	if (!(r & EMULATE_KEEPNIP))
+		kvmppc_set_pc(vcpu, kvmppc_get_pc(vcpu) + 4);
+	if (r == EMULATE_DONE_KEEPNIP)
+		r = EMULATE_DONE;
+
+	if (r == EMULATE_FAIL) {
 		printk(KERN_ERR "Couldn't emulate instruction 0x%08x "
 		       "(op %d xop %d)\n", inst, get_op(inst), get_xop(inst));
 		kvmppc_core_queue_program(vcpu, 0);
 	}
 
-	trace_kvm_ppc_instr(inst, kvmppc_get_pc(vcpu), emulated);
+	trace_kvm_ppc_instr(inst, kvmppc_get_pc(vcpu), r);
 
-	return emulated;
+	return r;
 }
 
 static void __init kvmppc_emulate_register(int op, int flags, int (*func))
@@ -757,8 +761,8 @@ void __init kvmppc_emulate_init(void)
 				    GFP_KERNEL);
 	kvmppc_list_spr_w = kzalloc(sizeof(struct kvmppc_opentry) * 0x400,
 				    GFP_KERNEL);
-	kvmppc_emulate_register_x(OP_31_XOP_MFSPR, 0, kvmppc_emulate_mfspr);
-	kvmppc_emulate_register_x(OP_31_XOP_MTSPR, 0, kvmppc_emulate_mtspr);
+//	kvmppc_emulate_register_x(OP_31_XOP_MFSPR, 0, kvmppc_emulate_mfspr);
+//	kvmppc_emulate_register_x(OP_31_XOP_MTSPR, 0, kvmppc_emulate_mtspr);
 
 	kvmppc_emulate_register_spr(SPRN_SRR0, 0,
 				    kvmppc_spr_read_srr0,
