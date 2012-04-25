@@ -642,7 +642,7 @@ int kvmppc_emulate_instruction(struct kvm_run *run, struct kvm_vcpu *vcpu)
 	if (r == EMULATE_DONE_KEEPNIP)
 		r = EMULATE_DONE;
 
-	if (r == EMULATE_FAIL) {
+	if (unlikely(r == EMULATE_FAIL)) {
 		printk(KERN_ERR "Couldn't emulate instruction 0x%08x "
 		       "(op %d xop %d)\n", inst, get_op(inst), get_xop(inst));
 		kvmppc_core_queue_program(vcpu, 0);
