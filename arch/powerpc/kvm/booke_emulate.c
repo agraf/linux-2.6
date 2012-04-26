@@ -248,7 +248,8 @@ void __init kvmppc_emulate_booke_init(void)
 	 * will return the wrong result if called for them in another context
 	 * (such as debugging).
 	 */
-	kvmppc_emulate_register_x(OP_31_XOP_WRTEE, 0, kvmppc_emulate_wrtee);
+	kvmppc_emulate_register_x(OP_31_XOP_WRTEE, EMUL_READ_RS,
+				  kvmppc_emulate_wrtee);
 	kvmppc_emulate_register_x(OP_31_XOP_WRTEEI, 0, kvmppc_emulate_wrteei);
 	kvmppc_emulate_register_spr(SPRN_DEAR, 0,
 				    kvmppc_spr_read_dear,

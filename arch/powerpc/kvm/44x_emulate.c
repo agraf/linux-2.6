@@ -161,10 +161,14 @@ static int kvmppc_spr_write_ccr1(struct kvm_vcpu *vcpu, int sprn, ulong val)
 
 void __init kvmppc_emulate_44x_init(void)
 {
-	kvmppc_emulate_register_x(XOP_MFDCR, 0, kvmppc_emulate_mfdcr);
-	kvmppc_emulate_register_x(XOP_MTDCR, 0, kvmppc_emulate_mtdcr);
-	kvmppc_emulate_register_x(XOP_TLBWE, 0, kvmppc_emulate_tlbwe);
-	kvmppc_emulate_register_x(XOP_TLBSX, 0, kvmppc_emulate_tlbsx);
+	kvmppc_emulate_register_x(XOP_MFDCR, EMUL_WRITE_RT,
+				  kvmppc_emulate_mfdcr);
+	kvmppc_emulate_register_x(XOP_MTDCR, EMUL_READ_RS,
+				  kvmppc_emulate_mtdcr);
+	kvmppc_emulate_register_x(XOP_TLBWE, EMUL_READ_RS | EMUL_READ_RA,
+				  kvmppc_emulate_tlbwe);
+	kvmppc_emulate_register_x(XOP_TLBSX, EMUL_WRITE_RT | EMUL_READ_RA |
+				  EMUL_READ_RB, kvmppc_emulate_tlbsx);
 	kvmppc_emulate_register_x(XOP_ICCCI, 0, kvmppc_emulate_iccci);
 	kvmppc_emulate_register_spr(SPRN_PID, 0,
 				    kvmppc_spr_read_pid,

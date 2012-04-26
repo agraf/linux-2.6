@@ -573,21 +573,31 @@ void __init kvmppc_emulate_book3s_init(void)
 		SPRN_PMC4_GEKKO, SPRN_WPAR_GEKKO,
 	};
 
-	kvmppc_emulate_register_x(XOP_MTMSRD, 0, kvmppc_emulate_mtmsrd);
-	kvmppc_emulate_register_x(XOP_MFSR, 0, kvmppc_emulate_mfsr);
-	kvmppc_emulate_register_x(XOP_MFSRIN, 0, kvmppc_emulate_mfsrin);
-	kvmppc_emulate_register_x(XOP_MTSR, 0, kvmppc_emulate_mtsr);
-	kvmppc_emulate_register_x(XOP_MTSRIN, 0, kvmppc_emulate_mtsrin);
-	kvmppc_emulate_register_x(XOP_TLBIE, 0, kvmppc_emulate_tlbie);
-	kvmppc_emulate_register_x(XOP_TLBIEL, 0, kvmppc_emulate_tlbie);
+	kvmppc_emulate_register_x(XOP_MTMSRD, EMUL_READ_RS,
+				  kvmppc_emulate_mtmsrd);
+	kvmppc_emulate_register_x(XOP_MFSR, EMUL_WRITE_RT, kvmppc_emulate_mfsr);
+	kvmppc_emulate_register_x(XOP_MFSRIN, EMUL_WRITE_RT | EMUL_READ_RB,
+				  kvmppc_emulate_mfsrin);
+	kvmppc_emulate_register_x(XOP_MTSR, EMUL_READ_RS, kvmppc_emulate_mtsr);
+	kvmppc_emulate_register_x(XOP_MTSRIN, EMUL_READ_RS | EMUL_READ_RB,
+				  kvmppc_emulate_mtsrin);
+	kvmppc_emulate_register_x(XOP_TLBIE, EMUL_READ_RB,
+				  kvmppc_emulate_tlbie);
+	kvmppc_emulate_register_x(XOP_TLBIEL, EMUL_READ_RB,
+				  kvmppc_emulate_tlbie);
 	kvmppc_emulate_register_x(XOP_EIOIO, 0, kvmppc_emulate_xnop);
-	kvmppc_emulate_register_x(XOP_SLBMTE, 0, kvmppc_emulate_slbmte);
-	kvmppc_emulate_register_x(XOP_SLBIE, 0, kvmppc_emulate_slbie);
+	kvmppc_emulate_register_x(XOP_SLBMTE, EMUL_READ_RS | EMUL_READ_RB,
+				  kvmppc_emulate_slbmte);
+	kvmppc_emulate_register_x(XOP_SLBIE, EMUL_READ_RB,
+				  kvmppc_emulate_slbie);
 	kvmppc_emulate_register_x(XOP_SLBIA, 0, kvmppc_emulate_slbia);
-	kvmppc_emulate_register_x(XOP_SLBMFEE, 0, kvmppc_emulate_slbmfee);
-	kvmppc_emulate_register_x(XOP_SLBMFEV, 0, kvmppc_emulate_slbmfev);
+	kvmppc_emulate_register_x(XOP_SLBMFEE, EMUL_WRITE_RT | EMUL_READ_RB,
+				  kvmppc_emulate_slbmfee);
+	kvmppc_emulate_register_x(XOP_SLBMFEV, EMUL_WRITE_RT | EMUL_READ_RB,
+				  kvmppc_emulate_slbmfev);
 	kvmppc_emulate_register_x(XOP_DCBA, 0, kvmppc_emulate_xnop);
-	kvmppc_emulate_register_x(XOP_DCBZ, 0, kvmppc_emulate_dcbz);
+	kvmppc_emulate_register_x(XOP_DCBZ, EMUL_READ_RB | EMUL_READ_RA,
+				  kvmppc_emulate_dcbz);
 
 	kvmppc_emulate_register_spr(SPRN_SDR1, 0,
 				    kvmppc_spr_read_sdr1,

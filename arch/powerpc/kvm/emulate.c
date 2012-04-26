@@ -676,12 +676,12 @@ void __init kvmppc_emulate_register_spr(int sprn, int flags,
 	int (*write)(struct kvm_vcpu *vcpu, int sprn, ulong val))
 {
 	struct kvmppc_opentry entry_w = {
-		.flags = flags | EMUL_FORM_SPR,
+		.flags = flags | EMUL_FORM_SPR | EMUL_READ_RS,
 		.func = (void*)write,
 	};
 
 	struct kvmppc_opentry entry_r = {
-		.flags = flags | EMUL_FORM_SPR,
+		.flags = flags | EMUL_FORM_SPR | EMUL_WRITE_RT,
 		.func = (void*)read,
 	};
 
@@ -707,20 +707,26 @@ void __init kvmppc_emulate_init(void)
 	kvmppc_list_op = kzalloc(sizeof(struct kvmppc_opentry) * 0x40,
 				 GFP_KERNEL);
 
-	kvmppc_emulate_register_d(OP_LWZ, 0, kvmppc_emulate_lwz);
-	kvmppc_emulate_register_d(OP_LWZU, 0, kvmppc_emulate_lwzu);
-	kvmppc_emulate_register_d(OP_LBZ, 0, kvmppc_emulate_lbz);
-	kvmppc_emulate_register_d(OP_LBZU, 0, kvmppc_emulate_lbzu);
-	kvmppc_emulate_register_d(OP_STW, 0, kvmppc_emulate_stw);
-	kvmppc_emulate_register_d(OP_STWU, 0, kvmppc_emulate_stwu);
-	kvmppc_emulate_register_d(OP_STB, 0, kvmppc_emulate_stb);
-	kvmppc_emulate_register_d(OP_STBU, 0, kvmppc_emulate_stbu);
-	kvmppc_emulate_register_d(OP_LHZ, 0, kvmppc_emulate_lhz);
-	kvmppc_emulate_register_d(OP_LHZU, 0, kvmppc_emulate_lhzu);
-	kvmppc_emulate_register_d(OP_LHA, 0, kvmppc_emulate_lha);
-	kvmppc_emulate_register_d(OP_LHAU, 0, kvmppc_emulate_lhau);
-	kvmppc_emulate_register_d(OP_STH, 0, kvmppc_emulate_sth);
-	kvmppc_emulate_register_d(OP_STHU, 0, kvmppc_emulate_sthu);
+	kvmppc_emulate_register_d(OP_LWZ, EMUL_WRITE_RT, kvmppc_emulate_lwz);
+	kvmppc_emulate_register_d(OP_LWZU, EMUL_WRITE_RT | EMUL_WRITE_RA,
+				  kvmppc_emulate_lwzu);
+	kvmppc_emulate_register_d(OP_LBZ, EMUL_WRITE_RT, kvmppc_emulate_lbz);
+	kvmppc_emulate_register_d(OP_LBZU, EMUL_WRITE_RA, kvmppc_emulate_lbzu);
+	kvmppc_emulate_register_d(OP_STW, EMUL_READ_RS, kvmppc_emulate_stw);
+	kvmppc_emulate_register_d(OP_STWU, EMUL_READ_RS | EMUL_WRITE_RA,
+				  kvmppc_emulate_stwu);
+	kvmppc_emulate_register_d(OP_STB, EMUL_READ_RS, kvmppc_emulate_stb);
+	kvmppc_emulate_register_d(OP_STBU, EMUL_READ_RS | EMUL_WRITE_RA,
+				  kvmppc_emulate_stbu);
+	kvmppc_emulate_register_d(OP_LHZ, EMUL_WRITE_RT, kvmppc_emulate_lhz);
+	kvmppc_emulate_register_d(OP_LHZU, EMUL_WRITE_RT | EMUL_WRITE_RA,
+				  kvmppc_emulate_lhzu);
+	kvmppc_emulate_register_d(OP_LHA, EMUL_WRITE_RT, kvmppc_emulate_lha);
+	kvmppc_emulate_register_d(OP_LHAU, EMUL_WRITE_RT | EMUL_WRITE_RA,
+				  kvmppc_emulate_lhau);
+	kvmppc_emulate_register_d(OP_STH, EMUL_READ_RS, kvmppc_emulate_sth);
+	kvmppc_emulate_register_d(OP_STHU, EMUL_READ_RS | EMUL_WRITE_RA,
+				  kvmppc_emulate_sthu);
 	kvmppc_emulate_register_d(OP_TRAP, 0, kvmppc_emulate_trap);
 #ifdef CONFIG_PPC_BOOK3S
 	kvmppc_emulate_register_d(OP_TRAP_64, 0, kvmppc_emulate_trap);
@@ -732,29 +738,48 @@ void __init kvmppc_emulate_init(void)
 				   GFP_KERNEL);
 
 	kvmppc_emulate_register(31, EMUL_FORM_X, NULL);
-	kvmppc_emulate_register_x(OP_31_XOP_LWZX, 0, kvmppc_emulate_lwzx);
-	kvmppc_emulate_register_x(OP_31_XOP_LBZX, 0, kvmppc_emulate_lbzx);
-	kvmppc_emulate_register_x(OP_31_XOP_LBZUX, 0, kvmppc_emulate_lbzux);
-	kvmppc_emulate_register_x(OP_31_XOP_STWX, 0, kvmppc_emulate_stwx);
-	kvmppc_emulate_register_x(OP_31_XOP_STBX, 0, kvmppc_emulate_stbx);
-	kvmppc_emulate_register_x(OP_31_XOP_STBUX, 0, kvmppc_emulate_stbux);
-	kvmppc_emulate_register_x(OP_31_XOP_LHAX, 0, kvmppc_emulate_lhax);
-	kvmppc_emulate_register_x(OP_31_XOP_LHZX, 0, kvmppc_emulate_lhzx);
-	kvmppc_emulate_register_x(OP_31_XOP_LHZUX, 0, kvmppc_emulate_lhzux);
-	kvmppc_emulate_register_x(OP_31_XOP_STHX, 0, kvmppc_emulate_sthx);
-	kvmppc_emulate_register_x(OP_31_XOP_STHUX, 0, kvmppc_emulate_sthux);
+	kvmppc_emulate_register_x(OP_31_XOP_LWZX, EMUL_WRITE_RT,
+				  kvmppc_emulate_lwzx);
+	kvmppc_emulate_register_x(OP_31_XOP_LBZX, EMUL_WRITE_RT,
+				  kvmppc_emulate_lbzx);
+	kvmppc_emulate_register_x(OP_31_XOP_LBZUX, EMUL_WRITE_RT | EMUL_WRITE_RA
+				  | EMUL_READ_RA | EMUL_READ_RB,
+				  kvmppc_emulate_lbzux);
+	kvmppc_emulate_register_x(OP_31_XOP_STWX, EMUL_READ_RS,
+				  kvmppc_emulate_stwx);
+	kvmppc_emulate_register_x(OP_31_XOP_STBX, EMUL_READ_RS,
+				  kvmppc_emulate_stbx);
+	kvmppc_emulate_register_x(OP_31_XOP_STBUX, EMUL_READ_RS | EMUL_WRITE_RA,
+				  kvmppc_emulate_stbux);
+	kvmppc_emulate_register_x(OP_31_XOP_LHAX, EMUL_WRITE_RT,
+				  kvmppc_emulate_lhax);
+	kvmppc_emulate_register_x(OP_31_XOP_LHZX, EMUL_WRITE_RT,
+				  kvmppc_emulate_lhzx);
+	kvmppc_emulate_register_x(OP_31_XOP_LHZUX,
+				  EMUL_WRITE_RT | EMUL_WRITE_RA,
+				  kvmppc_emulate_lhzux);
+	kvmppc_emulate_register_x(OP_31_XOP_STHX, EMUL_READ_RS,
+				  kvmppc_emulate_sthx);
+	kvmppc_emulate_register_x(OP_31_XOP_STHUX, EMUL_READ_RS | EMUL_WRITE_RA,
+				  kvmppc_emulate_sthux);
 	kvmppc_emulate_register_x(OP_31_XOP_DCBI, 0, kvmppc_emulate_dcbi);
-	kvmppc_emulate_register_x(OP_31_XOP_LWBRX, 0, kvmppc_emulate_lwbrx);
+	kvmppc_emulate_register_x(OP_31_XOP_LWBRX, EMUL_READ_RS,
+				  kvmppc_emulate_lwbrx);
 	kvmppc_emulate_register_x(OP_31_XOP_TLBSYNC, 0, kvmppc_emulate_tlbsync);
-	kvmppc_emulate_register_x(OP_31_XOP_STWBRX, 0, kvmppc_emulate_stwbrx);
-	kvmppc_emulate_register_x(OP_31_XOP_LHBRX, 0, kvmppc_emulate_lhbrx);
-	kvmppc_emulate_register_x(OP_31_XOP_STHBRX, 0, kvmppc_emulate_sthbrx);
+	kvmppc_emulate_register_x(OP_31_XOP_STWBRX, EMUL_READ_RS,
+				  kvmppc_emulate_stwbrx);
+	kvmppc_emulate_register_x(OP_31_XOP_LHBRX, EMUL_WRITE_RT,
+				  kvmppc_emulate_lhbrx);
+	kvmppc_emulate_register_x(OP_31_XOP_STHBRX, EMUL_READ_RS,
+				  kvmppc_emulate_sthbrx);
 	kvmppc_emulate_register_x(OP_31_XOP_TRAP, 0, kvmppc_emulate_trap_x);
 #ifdef CONFIG_64BIT
 	kvmppc_emulate_register_x(OP_31_XOP_TRAP_64, 0, kvmppc_emulate_trap_x);
 #endif
-	kvmppc_emulate_register_x(OP_31_XOP_MFMSR, 0, kvmppc_emulate_mfmsr);
-	kvmppc_emulate_register_x(OP_31_XOP_MTMSR, 0, kvmppc_emulate_mtmsr);
+	kvmppc_emulate_register_x(OP_31_XOP_MFMSR, EMUL_WRITE_RT,
+				  kvmppc_emulate_mfmsr);
+	kvmppc_emulate_register_x(OP_31_XOP_MTMSR, EMUL_READ_RS,
+				  kvmppc_emulate_mtmsr);
 
 	/* SPRs multiplex on top of op31 again */
 	kvmppc_list_spr_r = kzalloc(sizeof(struct kvmppc_opentry) * 0x400,

@@ -376,12 +376,17 @@ void __init kvmppc_emulate_e500_init(void)
 {
 	kvmppc_emulate_register_x(XOP_TLBRE, 0, kvmppc_emulate_tlbre);
 	kvmppc_emulate_register_x(XOP_TLBWE, 0, kvmppc_emulate_tlbwe);
-	kvmppc_emulate_register_x(XOP_TLBSX, 0, kvmppc_emulate_tlbsx);
-	kvmppc_emulate_register_x(XOP_TLBILX, 0, kvmppc_emulate_tlbilx);
-	kvmppc_emulate_register_x(XOP_TLBIVAX, 0, kvmppc_emulate_tlbivax);
+	kvmppc_emulate_register_x(XOP_TLBSX, EMUL_READ_RB,
+				  kvmppc_emulate_tlbsx);
+	kvmppc_emulate_register_x(XOP_TLBILX, EMUL_READ_RA | EMUL_READ_RB,
+				  kvmppc_emulate_tlbilx);
+	kvmppc_emulate_register_x(XOP_TLBIVAX, EMUL_READ_RA | EMUL_READ_RB,
+				  kvmppc_emulate_tlbivax);
 #ifdef CONFIG_KVM_E500MC
-	kvmppc_emulate_register_x(XOP_MSGSND, 0, kvmppc_emulate_msgsnd);
-	kvmppc_emulate_register_x(XOP_MSGCLR, 0, kvmppc_emulate_msgclr);
+	kvmppc_emulate_register_x(XOP_MSGSND, EMUL_READ_RB,
+				  kvmppc_emulate_msgsnd);
+	kvmppc_emulate_register_x(XOP_MSGCLR, EMUL_READ_RB,
+				  kvmppc_emulate_msgclr);
 #endif
 
 #ifndef CONFIG_KVM_BOOKE_HV

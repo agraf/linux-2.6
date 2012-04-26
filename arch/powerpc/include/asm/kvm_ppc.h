@@ -56,6 +56,12 @@ struct kvmppc_opentry {
 #define EMUL_FORM_D		0x01
 #define EMUL_FORM_X		0x02
 #define EMUL_FORM_SPR		0x03
+#define EMUL_READ_RS		(1 << 5)
+#define EMUL_WRITE_RT		(1 << 6)
+#define EMUL_READ_RA		(1 << 7)
+#define EMUL_WRITE_RA		(1 << 8)
+#define EMUL_READ_RB		(1 << 9)
+#define EMUL_WRITE_RB		(1 << 10)
 
 extern void kvmppc_emulate_init(void);
 extern void kvmppc_emulate_booke_init(void);
