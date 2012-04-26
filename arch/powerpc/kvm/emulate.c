@@ -628,7 +628,7 @@ int kvmppc_emulate_instruction(struct kvm_run *run, struct kvm_vcpu *vcpu)
 	default: {
 		int (*func)(struct kvm_vcpu *, int, int, int);
 		e = &kvmppc_list_op[get_op(inst)];
-		if (e->func) {
+		if (e->flags) {
 			func = e->func;
 			r = func(vcpu, get_rt(inst), get_ra(inst), get_d(inst));
 		} else {
@@ -656,6 +656,7 @@ int kvmppc_emulate_instruction(struct kvm_run *run, struct kvm_vcpu *vcpu)
 static void __init kvmppc_emulate_register(int op, int flags, int (*func))
 {
 	struct kvmppc_opentry entry = {
+		.flags = flags,
 		.func = func,
 	};
 
@@ -666,6 +667,7 @@ static void __init kvmppc_emulate_register(int op, int flags, int (*func))
 void __init kvmppc_emulate_register_d(int op, int flags,
 		int (*func)(struct kvm_vcpu *vcpu, int rt, int ra, int d))
 {
+	flags |= EMUL_FORM_D;
 	kvmppc_emulate_register(op, flags, (void*)func);
 }
 
@@ -674,10 +676,12 @@ void __init kvmppc_emulate_register_spr(int sprn, int flags,
 	int (*write)(struct kvm_vcpu *vcpu, int sprn, ulong val))
 {
 	struct kvmppc_opentry entry_w = {
+		.flags = flags | EMUL_FORM_SPR,
 		.func = (void*)write,
 	};
 
 	struct kvmppc_opentry entry_r = {
+		.flags = flags | EMUL_FORM_SPR,
 		.func = (void*)read,
 	};
 
@@ -690,6 +694,7 @@ void __init kvmppc_emulate_register_x(int xop, int flags,
 	int (*func)(struct kvm_vcpu *vcpu, int rt, int ra, int rb, int rc))
 {
 	struct kvmppc_opentry entry = {
+		.flags = flags | EMUL_FORM_X,
 		.func = (void*)func,
 	};
 
@@ -701,7 +706,6 @@ void __init kvmppc_emulate_init(void)
 {
 	kvmppc_list_op = kzalloc(sizeof(struct kvmppc_opentry) * 0x40,
 				 GFP_KERNEL);
-	BUG_ON(!kvmppc_list_op);
 
 	kvmppc_emulate_register_d(OP_LWZ, 0, kvmppc_emulate_lwz);
 	kvmppc_emulate_register_d(OP_LWZU, 0, kvmppc_emulate_lwzu);
@@ -726,7 +730,6 @@ void __init kvmppc_emulate_init(void)
 	/* op31 is special in that it multiplexes */
 	kvmppc_list_op31 = kzalloc(sizeof(struct kvmppc_opentry) * 0x400,
 				   GFP_KERNEL);
-	BUG_ON(!kvmppc_list_op31);
 
 	kvmppc_emulate_register(31, EMUL_FORM_X, NULL);
 	kvmppc_emulate_register_x(OP_31_XOP_LWZX, 0, kvmppc_emulate_lwzx);
@@ -756,10 +759,8 @@ void __init kvmppc_emulate_init(void)
 	/* SPRs multiplex on top of op31 again */
 	kvmppc_list_spr_r = kzalloc(sizeof(struct kvmppc_opentry) * 0x400,
 				    GFP_KERNEL);
-	BUG_ON(!kvmppc_list_spr_r);
 	kvmppc_list_spr_w = kzalloc(sizeof(struct kvmppc_opentry) * 0x400,
 				    GFP_KERNEL);
-	BUG_ON(!kvmppc_list_spr_w);
 //	kvmppc_emulate_register_x(OP_31_XOP_MFSPR, 0, kvmppc_emulate_mfspr);
 //	kvmppc_emulate_register_x(OP_31_XOP_MTSPR, 0, kvmppc_emulate_mtspr);
 
