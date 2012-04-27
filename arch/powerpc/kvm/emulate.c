@@ -140,48 +140,6 @@ u32 kvmppc_get_dec(struct kvm_vcpu *vcpu, u64 tb)
 	return vcpu->arch.dec - jd;
 }
 
-static int kvmppc_emulate_mtspr(struct kvm_vcpu *vcpu, int rs, int ra, int rb,
-				int rc)
-{
-	int sprn = (rb << 5) | ra;
-	int (*func)(struct kvm_vcpu *, int, ulong);
-	ulong val = kvmppc_get_gpr(vcpu, rs);
-	int r;
-
-	func = (void*)kvmppc_list_spr_w[sprn].func;
-	if (func) {
-		r = func(vcpu, sprn, val);
-	} else {
-		r = EMULATE_FAIL;
-		printk("mtspr: unknown spr 0x%x\n", sprn);
-	}
-
-	return r;
-}
-
-static int kvmppc_emulate_mfspr(struct kvm_vcpu *vcpu, int rt, int ra, int rb,
-				int rc)
-{
-	int sprn = (rb << 5) | ra;
-	int (*func)(struct kvm_vcpu *, int, ulong *);
-	ulong val;
-	int r;
-
-	func = (void*)kvmppc_list_spr_r[sprn].func;
-	if (func) {
-		r = func(vcpu, sprn, &val);
-	} else {
-		r = EMULATE_FAIL;
-		printk("mfspr: unknown spr 0x%x\n", sprn);
-	}
-
-	if (r == EMULATE_FAIL)
-		val = 0;
-	kvmppc_set_gpr(vcpu, rt, val);
-
-	return r;
-}
-
 static int kvmppc_emulate_lwz(struct kvm_vcpu *vcpu, int rt, int ra, int d)
 {
 	return kvmppc_handle_load(vcpu->run, vcpu, rt, 4, 1);
@@ -594,6 +552,8 @@ int kvmppc_emulate_instruction(struct kvm_run *run, struct kvm_vcpu *vcpu)
 	u32 inst = kvmppc_get_last_inst(vcpu);
 	enum emulation_result r = EMULATE_DONE;
 	struct kvmppc_opentry *e;
+	int sprn = get_sprn(inst);
+	ulong val;
 
 	/* this default type might be overwritten by subcategories */
 	kvmppc_set_exit_type(vcpu, EMULATED_INST_EXITS);
@@ -603,16 +563,33 @@ int kvmppc_emulate_instruction(struct kvm_run *run, struct kvm_vcpu *vcpu)
 	switch (get_op(inst)) {
 	case 31:
 		switch(get_xop(inst)) {
-		case OP_31_XOP_MFSPR:
-			r = kvmppc_emulate_mfspr(vcpu, get_rt(inst),
-						 get_ra(inst), get_rb(inst),
-						 get_rc(inst));
+		case OP_31_XOP_MFSPR: {
+			int (*func)(struct kvm_vcpu *, int, ulong *);
+			func = (void*)kvmppc_list_spr_r[sprn].func;
+			if (func) {
+				r = func(vcpu, sprn, &val);
+			} else {
+				r = EMULATE_FAIL;
+				printk("mfspr: unknown spr 0x%x\n", sprn);
+			}
+
+			if (r == EMULATE_FAIL)
+				val = 0;
+			kvmppc_set_gpr(vcpu, get_rt(inst), val);
 			break;
-		case OP_31_XOP_MTSPR:
-			r = kvmppc_emulate_mtspr(vcpu, get_rt(inst),
-						 get_ra(inst), get_rb(inst),
-						 get_rc(inst));
+		}
+		case OP_31_XOP_MTSPR: {
+			int (*func)(struct kvm_vcpu *, int, ulong);
+			func = (void*)kvmppc_list_spr_w[sprn].func;
+			if (func) {
+				val = kvmppc_get_gpr(vcpu, get_rs(inst));
+				r = func(vcpu, sprn, val);
+			} else {
+				r = EMULATE_FAIL;
+				printk("mtspr: unknown spr 0x%x\n", sprn);
+			}
 			break;
+		}
 		default: {
 			int (*func)(struct kvm_vcpu *, int, int, int, int);
 			func = (void*)kvmppc_list_op31[get_xop(inst)].func;
@@ -786,8 +763,6 @@ void __init kvmppc_emulate_init(void)
 				    GFP_KERNEL);
 	kvmppc_list_spr_w = kzalloc(sizeof(struct kvmppc_opentry) * 0x400,
 				    GFP_KERNEL);
-//	kvmppc_emulate_register_x(OP_31_XOP_MFSPR, 0, kvmppc_emulate_mfspr);
-//	kvmppc_emulate_register_x(OP_31_XOP_MTSPR, 0, kvmppc_emulate_mtspr);
 
 	kvmppc_emulate_register_spr(SPRN_SRR0, 0,
 				    kvmppc_spr_read_srr0,
