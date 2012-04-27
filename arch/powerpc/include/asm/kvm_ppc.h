@@ -45,6 +45,7 @@ enum emulation_result {
 	EMULATE_FAIL         = 0x3 | EMULATE_KEEPNIP, /* can't emulate */
 	EMULATE_AGAIN        = 0x4 | EMULATE_KEEPNIP, /* breakage. go again */
 	EMULATE_DONE_KEEPNIP = 0x0 | EMULATE_KEEPNIP, /* done, but NIP stays */
+	EMULATE_AGAIN_NV     = 0x8 | EMULATE_KEEPNIP, /* no nv regs. go again */
 };
 
 struct kvmppc_opentry {
@@ -95,7 +96,8 @@ extern int kvmppc_handle_store(struct kvm_run *run, struct kvm_vcpu *vcpu,
                                u64 val, unsigned int bytes, int is_bigendian);
 
 extern int kvmppc_emulate_instruction(struct kvm_run *run,
-                                      struct kvm_vcpu *vcpu);
+                                      struct kvm_vcpu *vcpu,
+				      int has_nv_regs);
 extern int kvmppc_emulate_mmio(struct kvm_run *run, struct kvm_vcpu *vcpu);
 extern void kvmppc_emulate_dec(struct kvm_vcpu *vcpu);
 extern u32 kvmppc_get_dec(struct kvm_vcpu *vcpu, u64 tb);

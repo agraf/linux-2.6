@@ -531,6 +531,25 @@ static int kvmppc_spr_write_dec(struct kvm_vcpu *vcpu, int sprn, ulong val)
 	return EMULATE_DONE;
 }
 
+static int emul_check(u32 inst, int flags, int has_nv_regs)
+{
+	int maxreg = 14;
+
+	if (has_nv_regs)
+		return EMULATE_DONE;
+
+	if ((flags & EMUL_READ_RS) && (get_rs(inst) > maxreg))
+		return EMULATE_AGAIN_NV;
+
+	if ((flags & EMUL_READ_RA) && (get_ra(inst) > maxreg))
+		return EMULATE_AGAIN_NV;
+
+	if ((flags & EMUL_READ_RB) && (get_rb(inst) > maxreg))
+		return EMULATE_AGAIN_NV;
+
+	return EMULATE_DONE;
+}
+
 /* XXX to do:
  * lhax
  * lhaux
@@ -547,13 +566,15 @@ static int kvmppc_spr_write_dec(struct kvm_vcpu *vcpu, int sprn, ulong val)
  */
 /* XXX Should probably auto-generate instruction decoding for a particular core
  * from opcode tables in the future. */
-int kvmppc_emulate_instruction(struct kvm_run *run, struct kvm_vcpu *vcpu)
+int kvmppc_emulate_instruction(struct kvm_run *run, struct kvm_vcpu *vcpu,
+			       int has_nv_regs)
 {
 	u32 inst = kvmppc_get_last_inst(vcpu);
 	enum emulation_result r = EMULATE_DONE;
 	struct kvmppc_opentry *e;
 	int sprn = get_sprn(inst);
 	ulong val;
+	int flags;
 
 	/* this default type might be overwritten by subcategories */
 	kvmppc_set_exit_type(vcpu, EMULATED_INST_EXITS);
@@ -582,6 +603,9 @@ int kvmppc_emulate_instruction(struct kvm_run *run, struct kvm_vcpu *vcpu)
 			int (*func)(struct kvm_vcpu *, int, ulong);
 			func = (void*)kvmppc_list_spr_w[sprn].func;
 			if (func) {
+				r = emul_check(inst, EMUL_READ_RS, has_nv_regs);
+				if (r != EMULATE_DONE)
+					return r;
 				val = kvmppc_get_gpr(vcpu, get_rs(inst));
 				r = func(vcpu, sprn, val);
 			} else {
@@ -592,12 +616,17 @@ int kvmppc_emulate_instruction(struct kvm_run *run, struct kvm_vcpu *vcpu)
 		}
 		default: {
 			int (*func)(struct kvm_vcpu *, int, int, int, int);
+			flags = kvmppc_list_op31[get_xop(inst)].flags;
 			func = (void*)kvmppc_list_op31[get_xop(inst)].func;
-			if (func)
+			if (func) {
+				r = emul_check(inst, flags, has_nv_regs);
+				if (r != EMULATE_DONE)
+					return r;
 				r = func(vcpu, get_rt(inst), get_ra(inst),
 					 get_rb(inst), get_rc(inst));
-			else
+			} else {
 				r = EMULATE_FAIL;
+			}
 			break;
 		}
 		}
@@ -607,6 +636,9 @@ int kvmppc_emulate_instruction(struct kvm_run *run, struct kvm_vcpu *vcpu)
 		e = &kvmppc_list_op[get_op(inst)];
 		if (e->flags) {
 			func = e->func;
+			r = emul_check(inst, e->flags, has_nv_regs);
+			if (r != EMULATE_DONE)
+				return r;
 			r = func(vcpu, get_rt(inst), get_ra(inst), get_d(inst));
 		} else {
 			r = EMULATE_FAIL;

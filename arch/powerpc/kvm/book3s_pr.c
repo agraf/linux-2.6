@@ -733,7 +733,7 @@ program_interrupt:
 		}
 
 		vcpu->stat.emulated_inst_exits++;
-		er = kvmppc_emulate_instruction(run, vcpu);
+		er = kvmppc_emulate_instruction(run, vcpu, true);
 		switch (er) {
 		case EMULATE_DONE:
 			r = RESUME_GUEST_NV;

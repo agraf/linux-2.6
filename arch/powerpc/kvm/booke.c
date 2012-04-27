@@ -568,7 +568,7 @@ static int emulation_exit(struct kvm_run *run, struct kvm_vcpu *vcpu)
 {
 	enum emulation_result er;
 
-	er = kvmppc_emulate_instruction(run, vcpu);
+	er = kvmppc_emulate_instruction(run, vcpu, true);
 	switch (er) {
 	case EMULATE_DONE:
 		/* don't overwrite subtypes, just account kvm_stats */
