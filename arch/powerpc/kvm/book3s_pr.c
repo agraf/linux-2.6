@@ -278,8 +278,8 @@ static int kvmppc_visible_gfn(struct kvm_vcpu *vcpu, gfn_t gfn)
 	return kvm_is_visible_gfn(vcpu->kvm, gfn);
 }
 
-int kvmppc_handle_pagefault(struct kvm_run *run, struct kvm_vcpu *vcpu,
-			    ulong eaddr, int vec)
+static int kvmppc_handle_pagefault(struct kvm_run *run, struct kvm_vcpu *vcpu,
+				   ulong eaddr, int vec, int has_nv_regs)
 {
 	bool data = (vec == BOOK3S_INTERRUPT_DATA_STORAGE);
 	int r = RESUME_GUEST;
@@ -368,10 +368,14 @@ int kvmppc_handle_pagefault(struct kvm_run *run, struct kvm_vcpu *vcpu,
 			kvmppc_patch_dcbz(vcpu, &pte);
 	} else {
 		/* MMIO */
+		/* XXX optimize to only occur on real nv usage */
+		if (!has_nv_regs)
+			return RESUME_AGAIN_NV;
 		vcpu->stat.mmio_exits++;
 		vcpu->arch.paddr_accessed = pte.raddr;
 		vcpu->arch.vaddr_accessed = pte.eaddr;
 		r = kvmppc_emulate_mmio(run, vcpu);
+
 		if ( r == RESUME_HOST_NV )
 			r = RESUME_HOST;
 	}
@@ -539,7 +543,7 @@ static int kvmppc_handle_ext(struct kvm_vcpu *vcpu, unsigned int exit_nr,
 }
 
 int kvmppc_handle_exit(struct kvm_run *run, struct kvm_vcpu *vcpu,
-                       unsigned int exit_nr)
+                       unsigned int exit_nr, int has_nv_regs)
 {
 	int r = RESUME_HOST;
 
@@ -572,7 +576,8 @@ int kvmppc_handle_exit(struct kvm_run *run, struct kvm_vcpu *vcpu,
 
 		/* only care about PTEG not found errors, but leave NX alone */
 		if (shadow_srr1 & 0x40000000) {
-			r = kvmppc_handle_pagefault(run, vcpu, kvmppc_get_pc(vcpu), exit_nr);
+			r = kvmppc_handle_pagefault(run, vcpu,
+				kvmppc_get_pc(vcpu), exit_nr, has_nv_regs);
 			vcpu->stat.sp_instruc++;
 		} else if (vcpu->arch.mmu.is_dcbz32(vcpu) &&
 			  (!(vcpu->arch.hflags & BOOK3S_HFLAG_DCBZ32))) {
@@ -611,7 +616,8 @@ int kvmppc_handle_exit(struct kvm_run *run, struct kvm_vcpu *vcpu,
 
 		/* The only case we need to handle is missing shadow PTEs */
 		if (fault_dsisr & DSISR_NOHPTE) {
-			r = kvmppc_handle_pagefault(run, vcpu, dar, exit_nr);
+			r = kvmppc_handle_pagefault(run, vcpu, dar, exit_nr,
+						    has_nv_regs);
 		} else {
 			vcpu->arch.shared->dar = dar;
 			vcpu->arch.shared->dsisr = fault_dsisr;
@@ -675,13 +681,19 @@ program_interrupt:
 		}
 
 		vcpu->stat.emulated_inst_exits++;
-		er = kvmppc_emulate_instruction(run, vcpu, true);
+		er = kvmppc_emulate_instruction(run, vcpu, has_nv_regs);
 		switch (er) {
 		case EMULATE_DONE:
+			r = RESUME_GUEST;
+			break;
+		case EMULATE_DONE_NV:
 			r = RESUME_GUEST_NV;
 			break;
 		case EMULATE_AGAIN:
 			r = RESUME_GUEST;
+			break;
+		case EMULATE_AGAIN_NV:
+			r = RESUME_AGAIN_NV;
 			break;
 		case EMULATE_FAIL:
 			printk(KERN_CRIT "%s: emulation at %lx failed (%08x)\n",
@@ -802,7 +814,7 @@ program_interrupt:
 	}
 
 	preempt_disable();
-	if (!(r & RESUME_HOST)) {
+	if (!(r & (RESUME_HOST | RESUME_FLAG_AGAIN))) {
 		/* To avoid clobbering exit_reason, only check for signals if
 		 * we aren't already exiting to userspace for some other
 		 * reason. */

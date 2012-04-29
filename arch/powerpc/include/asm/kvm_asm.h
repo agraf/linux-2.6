@@ -118,11 +118,13 @@
 
 #define RESUME_FLAG_NV          (1<<0)  /* Reload guest nonvolatile state? */
 #define RESUME_FLAG_HOST        (1<<1)  /* Resume host? */
+#define RESUME_FLAG_AGAIN       (1<<2)  /* Run exit handler again */
 
 #define RESUME_GUEST            0
 #define RESUME_GUEST_NV         RESUME_FLAG_NV
 #define RESUME_HOST             RESUME_FLAG_HOST
 #define RESUME_HOST_NV          (RESUME_FLAG_HOST|RESUME_FLAG_NV)
+#define RESUME_AGAIN_NV         (RESUME_FLAG_AGAIN|RESUME_FLAG_NV)
 
 #define KVM_GUEST_MODE_NONE	0
 #define KVM_GUEST_MODE_GUEST	1

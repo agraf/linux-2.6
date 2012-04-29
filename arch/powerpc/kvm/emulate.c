@@ -531,20 +531,52 @@ static int kvmppc_spr_write_dec(struct kvm_vcpu *vcpu, int sprn, ulong val)
 	return EMULATE_DONE;
 }
 
-static int emul_check(u32 inst, int flags, int has_nv_regs)
+static bool emul_writes_nv(u32 inst, int flags)
 {
 	int maxreg = 14;
 
+	if ((flags & EMUL_WRITE_RT) && (get_rt(inst) > maxreg))
+		return true;
+
+	if ((flags & EMUL_WRITE_RA) && (get_ra(inst) > maxreg))
+		return true;
+
+	if ((flags & EMUL_WRITE_RB) && (get_rb(inst) > maxreg))
+		return true;
+
+	return false;
+}
+
+static bool emul_reads_nv(u32 inst, int flags)
+{
+	int maxreg = 14;
+
+	if ((flags & EMUL_READ_RS) && (get_rs(inst) > maxreg))
+		return true;
+
+	if ((flags & EMUL_READ_RA) && (get_ra(inst) > maxreg))
+		return true;
+
+	if ((flags & EMUL_READ_RB) && (get_rb(inst) > maxreg))
+		return true;
+
+	return false;
+}
+
+static int emul_check(u32 inst, int flags, int has_nv_regs)
+{
 	if (has_nv_regs)
 		return EMULATE_DONE;
 
-	if ((flags & EMUL_READ_RS) && (get_rs(inst) > maxreg))
+	if (emul_reads_nv(inst, flags))
 		return EMULATE_AGAIN_NV;
 
-	if ((flags & EMUL_READ_RA) && (get_ra(inst) > maxreg))
-		return EMULATE_AGAIN_NV;
-
-	if ((flags & EMUL_READ_RB) && (get_rb(inst) > maxreg))
+	/*
+	 * We also need to make sure that registers we want to write to
+	 * have been written to memory before. Otherwise we could get
+	 * stale register values when we read them back from memory
+	 */
+	if (emul_writes_nv(inst, flags))
 		return EMULATE_AGAIN_NV;
 
 	return EMULATE_DONE;
@@ -588,6 +620,10 @@ int kvmppc_emulate_instruction(struct kvm_run *run, struct kvm_vcpu *vcpu,
 			int (*func)(struct kvm_vcpu *, int, ulong *);
 			func = (void*)kvmppc_list_spr_r[sprn].func;
 			if (func) {
+				flags = EMUL_WRITE_RT;
+				r = emul_check(inst, flags, has_nv_regs);
+				if (r != EMULATE_DONE)
+					return r;
 				r = func(vcpu, sprn, &val);
 			} else {
 				r = EMULATE_FAIL;
@@ -603,7 +639,8 @@ int kvmppc_emulate_instruction(struct kvm_run *run, struct kvm_vcpu *vcpu,
 			int (*func)(struct kvm_vcpu *, int, ulong);
 			func = (void*)kvmppc_list_spr_w[sprn].func;
 			if (func) {
-				r = emul_check(inst, EMUL_READ_RS, has_nv_regs);
+				flags = EMUL_READ_RS;
+				r = emul_check(inst, flags, has_nv_regs);
 				if (r != EMULATE_DONE)
 					return r;
 				val = kvmppc_get_gpr(vcpu, get_rs(inst));
@@ -636,7 +673,8 @@ int kvmppc_emulate_instruction(struct kvm_run *run, struct kvm_vcpu *vcpu,
 		e = &kvmppc_list_op[get_op(inst)];
 		if (e->flags) {
 			func = e->func;
-			r = emul_check(inst, e->flags, has_nv_regs);
+			flags = e->flags;
+			r = emul_check(inst, flags, has_nv_regs);
 			if (r != EMULATE_DONE)
 				return r;
 			r = func(vcpu, get_rt(inst), get_ra(inst), get_d(inst));
@@ -650,6 +688,8 @@ int kvmppc_emulate_instruction(struct kvm_run *run, struct kvm_vcpu *vcpu,
 		kvmppc_set_pc(vcpu, kvmppc_get_pc(vcpu) + 4);
 	if (r == EMULATE_DONE_KEEPNIP)
 		r = EMULATE_DONE;
+	if (r == EMULATE_DONE && emul_writes_nv(inst, flags))
+		r = EMULATE_DONE_NV;
 
 	if (unlikely(r == EMULATE_FAIL)) {
 		printk(KERN_ERR "Couldn't emulate instruction 0x%08x "

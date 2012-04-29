@@ -46,6 +46,7 @@ enum emulation_result {
 	EMULATE_AGAIN        = 0x4 | EMULATE_KEEPNIP, /* breakage. go again */
 	EMULATE_DONE_KEEPNIP = 0x0 | EMULATE_KEEPNIP, /* done, but NIP stays */
 	EMULATE_AGAIN_NV     = 0x8 | EMULATE_KEEPNIP, /* no nv regs. go again */
+	EMULATE_DONE_NV      = 0x10,              /* no further processing */
 };
 
 struct kvmppc_opentry {

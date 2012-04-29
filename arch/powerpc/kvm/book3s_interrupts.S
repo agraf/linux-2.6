@@ -128,33 +128,18 @@ kvmppc_handler_highmem:
 	 *
 	 */
 
-	/* R7 = vcpu */
-	PPC_LL	r7, GPR4(r1)
-
-	PPC_STL	r14, VCPU_GPR(r14)(r7)
-	PPC_STL	r15, VCPU_GPR(r15)(r7)
-	PPC_STL	r16, VCPU_GPR(r16)(r7)
-	PPC_STL	r17, VCPU_GPR(r17)(r7)
-	PPC_STL	r18, VCPU_GPR(r18)(r7)
-	PPC_STL	r19, VCPU_GPR(r19)(r7)
-	PPC_STL	r20, VCPU_GPR(r20)(r7)
-	PPC_STL	r21, VCPU_GPR(r21)(r7)
-	PPC_STL	r22, VCPU_GPR(r22)(r7)
-	PPC_STL	r23, VCPU_GPR(r23)(r7)
-	PPC_STL	r24, VCPU_GPR(r24)(r7)
-	PPC_STL	r25, VCPU_GPR(r25)(r7)
-	PPC_STL	r26, VCPU_GPR(r26)(r7)
-	PPC_STL	r27, VCPU_GPR(r27)(r7)
-	PPC_STL	r28, VCPU_GPR(r28)(r7)
-	PPC_STL	r29, VCPU_GPR(r29)(r7)
-	PPC_STL	r30, VCPU_GPR(r30)(r7)
-	PPC_STL	r31, VCPU_GPR(r31)(r7)
-
-	/* Pass the exit number as 3rd argument to kvmppc_handle_exit */
-	mr	r5, r12
-
 	/* Restore r3 (kvm_run) and r4 (vcpu) */
 	REST_2GPRS(3, r1)
+
+	PPC_STL	r14, VCPU_GPR(r14)(r4)
+	/* Pass the exit number as 3rd argument to kvmppc_handle_exit */
+	mr	r5, r12
+	/* Save the exit number for later */
+	mr	r14, r12
+	/* Tell handle_exit that we're running w/o nv gprs */
+	li	r6, 0
+
+kvm_handle_again:
 	bl	FUNC(kvmppc_handle_exit)
 
 	/* If RESUME_GUEST, get back in the loop */
@@ -163,6 +148,42 @@ kvmppc_handler_highmem:
 
 	cmpwi	r3, RESUME_GUEST_NV
 	beq	kvm_loop_heavyweight
+
+	/* Not going directly into the guest again */
+
+	/* Save NV GPRs into memory */
+	REST_GPR(4, r1)
+	PPC_STL	r15, VCPU_GPR(r15)(r4)
+	PPC_STL	r16, VCPU_GPR(r16)(r4)
+	PPC_STL	r17, VCPU_GPR(r17)(r4)
+	PPC_STL	r18, VCPU_GPR(r18)(r4)
+	PPC_STL	r19, VCPU_GPR(r19)(r4)
+	PPC_STL	r20, VCPU_GPR(r20)(r4)
+	PPC_STL	r21, VCPU_GPR(r21)(r4)
+	PPC_STL	r22, VCPU_GPR(r22)(r4)
+	PPC_STL	r23, VCPU_GPR(r23)(r4)
+	PPC_STL	r24, VCPU_GPR(r24)(r4)
+	PPC_STL	r25, VCPU_GPR(r25)(r4)
+	PPC_STL	r26, VCPU_GPR(r26)(r4)
+	PPC_STL	r27, VCPU_GPR(r27)(r4)
+	PPC_STL	r28, VCPU_GPR(r28)(r4)
+	PPC_STL	r29, VCPU_GPR(r29)(r4)
+	PPC_STL	r30, VCPU_GPR(r30)(r4)
+	PPC_STL	r31, VCPU_GPR(r31)(r4)
+
+	/* 
+	 * Run the exit handling with NV GPRs in memory again
+	 * or exit the function for real.
+	 */
+	cmpwi	r3, RESUME_AGAIN_NV
+	bne	kvm_exit_loop
+
+	REST_GPR(3, r1)
+	/* Tell handle_exit that we're running with nv gprs */
+	li	r6, 1
+	/* restore exit number */
+	mr	r5, r14
+	b	kvm_handle_again
 
 kvm_exit_loop:
 
@@ -196,6 +217,9 @@ kvm_loop_lightweight:
 
 	/* We'll need the vcpu pointer */
 	REST_GPR(4, r1)
+
+	/* And the guest's r14 which we clobbered before */
+	PPC_LL	r14, VCPU_GPR(r14)(r4);
 
 	/* Jump back into the beginning of this function */
 	b	kvm_start_lightweight
