@@ -81,7 +81,7 @@ static struct kvmppc_sid_map *find_sid_vsid(struct kvm_vcpu *vcpu, u64 gvsid)
 int kvmppc_mmu_map_page(struct kvm_vcpu *vcpu, struct kvmppc_pte *orig_pte)
 {
 	pfn_t hpaddr;
-	ulong hash, hpteg, va;
+	ulong hash, hpteg, va, hva;
 	u64 vsid;
 	int ret;
 	int rflags = 0x192;
@@ -91,7 +91,7 @@ int kvmppc_mmu_map_page(struct kvm_vcpu *vcpu, struct kvmppc_pte *orig_pte)
 	int r = 0;
 
 	/* Get host physical address for gpa */
-	hpaddr = kvmppc_gfn_to_pfn(vcpu, orig_pte->raddr >> PAGE_SHIFT);
+	hpaddr = kvmppc_gfn_to_pfn(vcpu, orig_pte->raddr >> PAGE_SHIFT, &hva);
 	if (is_error_pfn(hpaddr)) {
 		printk(KERN_INFO "Couldn't get guest page for gfn %lx!\n", orig_pte->eaddr);
 		r = -EINVAL;
@@ -163,6 +163,7 @@ map_again:
 
 		pte->slot = hpteg + (ret & 7);
 		pte->host_va = va;
+		pte->hva = hva;
 		pte->pte = *orig_pte;
 		pte->pfn = hpaddr >> PAGE_SHIFT;
 

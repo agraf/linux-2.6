@@ -291,6 +291,31 @@ void kvmppc_mmu_pte_pflush(struct kvm_vcpu *vcpu, ulong pa_start, ulong pa_end)
 	rcu_read_unlock();
 }
 
+int kvmppc_mmu_pte_flush_hva(struct kvm_vcpu *vcpu, ulong hva, ulong mask)
+{
+	struct kvmppc_vcpu_book3s *vcpu3s = to_book3s(vcpu);
+	struct hpte_cache *pte;
+	struct hlist_node *node;
+	int i;
+	int r = 0;
+
+	hva &= mask;
+	rcu_read_lock();
+
+	for (i = 0; i < HPTEG_HASH_NUM_VPTE_LONG; i++) {
+		struct hlist_head *list = &vcpu3s->hpte_hash_vpte_long[i];
+
+		hlist_for_each_entry_rcu(pte, node, list, list_vpte_long)
+			if ((pte->hva & mask) == hva) {
+				invalidate_pte(vcpu, pte);
+				r++;
+			}
+	}
+
+	rcu_read_unlock();
+	return r;
+}
+
 struct hpte_cache *kvmppc_mmu_hpte_cache_next(struct kvm_vcpu *vcpu)
 {
 	struct kvmppc_vcpu_book3s *vcpu3s = to_book3s(vcpu);

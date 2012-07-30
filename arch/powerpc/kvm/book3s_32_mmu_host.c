@@ -151,10 +151,11 @@ int kvmppc_mmu_map_page(struct kvm_vcpu *vcpu, struct kvmppc_pte *orig_pte)
 	bool primary = false;
 	bool evict = false;
 	struct hpte_cache *pte;
+	ulong hva;
 	int r = 0;
 
 	/* Get host physical address for gpa */
-	hpaddr = kvmppc_gfn_to_pfn(vcpu, orig_pte->raddr >> PAGE_SHIFT);
+	hpaddr = kvmppc_gfn_to_pfn(vcpu, orig_pte->raddr >> PAGE_SHIFT, &hva);
 	if (is_error_pfn(hpaddr)) {
 		printk(KERN_INFO "Couldn't get guest page for gfn %lx!\n",
 				 orig_pte->eaddr);
@@ -249,6 +250,7 @@ next_pteg:
 
 	pte->slot = (ulong)&pteg[rr];
 	pte->host_va = va;
+	pte->hva = hva;
 	pte->pte = *orig_pte;
 	pte->pfn = hpaddr >> PAGE_SHIFT;
 

@@ -1159,6 +1159,12 @@ pfn_t hva_to_pfn_atomic(unsigned long addr)
 }
 EXPORT_SYMBOL_GPL(hva_to_pfn_atomic);
 
+pfn_t hva_to_pfn_normal(unsigned long addr)
+{
+	return hva_to_pfn(addr, false, NULL, true, NULL);
+}
+EXPORT_SYMBOL_GPL(hva_to_pfn_normal);
+
 static pfn_t __gfn_to_pfn(struct kvm *kvm, gfn_t gfn, bool atomic, bool *async,
 			  bool write_fault, bool *writable)
 {

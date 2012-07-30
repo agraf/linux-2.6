@@ -61,6 +61,7 @@ struct hpte_cache {
 	struct rcu_head rcu_head;
 	u64 host_va;
 	u64 pfn;
+	ulong hva;
 	ulong slot;
 	struct kvmppc_pte pte;
 };
@@ -114,6 +115,7 @@ struct kvmppc_vcpu_book3s {
 extern void kvmppc_mmu_pte_flush(struct kvm_vcpu *vcpu, ulong ea, ulong ea_mask);
 extern void kvmppc_mmu_pte_vflush(struct kvm_vcpu *vcpu, u64 vp, u64 vp_mask);
 extern void kvmppc_mmu_pte_pflush(struct kvm_vcpu *vcpu, ulong pa_start, ulong pa_end);
+extern int kvmppc_mmu_pte_flush_hva(struct kvm_vcpu *vcpu, ulong hva, ulong mask);
 extern void kvmppc_set_msr(struct kvm_vcpu *vcpu, u64 new_msr);
 extern void kvmppc_set_pvr(struct kvm_vcpu *vcpu, u32 pvr);
 extern void kvmppc_mmu_book3s_64_init(struct kvm_vcpu *vcpu);
@@ -145,7 +147,7 @@ extern void kvmppc_set_bat(struct kvm_vcpu *vcpu, struct kvmppc_bat *bat,
 			   bool upper, u32 val);
 extern void kvmppc_giveup_ext(struct kvm_vcpu *vcpu, ulong msr);
 extern int kvmppc_emulate_paired_single(struct kvm_run *run, struct kvm_vcpu *vcpu);
-extern pfn_t kvmppc_gfn_to_pfn(struct kvm_vcpu *vcpu, gfn_t gfn);
+extern pfn_t kvmppc_gfn_to_pfn(struct kvm_vcpu *vcpu, gfn_t gfn, ulong *hva);
 extern void kvmppc_add_revmap_chain(struct kvm *kvm, struct revmap_entry *rev,
 			unsigned long *rmap, long pte_index, int realmode);
 extern void kvmppc_invalidate_hpte(struct kvm *kvm, unsigned long *hptep,

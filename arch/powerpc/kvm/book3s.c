@@ -287,8 +287,9 @@ int kvmppc_core_prepare_to_enter(struct kvm_vcpu *vcpu)
 	return 0;
 }
 
-pfn_t kvmppc_gfn_to_pfn(struct kvm_vcpu *vcpu, gfn_t gfn)
+pfn_t kvmppc_gfn_to_pfn(struct kvm_vcpu *vcpu, gfn_t gfn, ulong *hva)
 {
+	unsigned long _hva;
 	ulong mp_pa = vcpu->arch.magic_page_pa;
 
 	if (!(vcpu->arch.shared->msr & MSR_SF))
@@ -306,7 +307,13 @@ pfn_t kvmppc_gfn_to_pfn(struct kvm_vcpu *vcpu, gfn_t gfn)
 		return pfn;
 	}
 
-	return gfn_to_pfn(vcpu->kvm, gfn);
+	*hva = _hva = gfn_to_hva(vcpu->kvm, gfn);
+	if (kvm_is_error_hva(_hva)) {
+		get_page(get_bad_page());
+		return page_to_pfn(get_bad_page());
+	}
+
+	return hva_to_pfn_normal(_hva);
 }
 
 static int kvmppc_xlate(struct kvm_vcpu *vcpu, ulong eaddr, bool data,

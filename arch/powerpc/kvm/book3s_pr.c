@@ -1183,6 +1183,62 @@ int kvm_vm_ioctl_get_smmu_info(struct kvm *kvm, struct kvm_ppc_smmu_info *info)
 }
 #endif /* CONFIG_PPC64 */
 
+/************* MMU Notifiers *************/
+
+int kvm_unmap_hva(struct kvm *kvm, unsigned long hva)
+{
+	struct kvm_vcpu *vcpu;
+	unsigned long n;
+	// XXX check if we can get code to actually run in the vcpu context
+	kvm_for_each_vcpu(n, vcpu, kvm)
+		kvmppc_mmu_pte_flush_hva(vcpu, hva, PAGE_MASK);
+
+	return 0;
+}
+
+int kvm_unmap_hva_range(struct kvm *kvm, unsigned long start, unsigned long end)
+{
+	struct kvm_vcpu *vcpu;
+	unsigned long n;
+	unsigned long mask;
+
+	mask = start ^ end;
+	mask = ~(1 << __ffs(mask));
+
+	// XXX check if we can get code to actually run in the vcpu context
+	kvm_for_each_vcpu(n, vcpu, kvm)
+		kvmppc_mmu_pte_flush_hva(vcpu, start, mask);
+
+	return 0;
+}
+
+int kvm_age_hva(struct kvm *kvm, unsigned long hva)
+{
+	struct kvm_vcpu *vcpu;
+	unsigned long n;
+	int r = 0;
+	// XXX check if we can get code to actually run in the vcpu context
+	// XXX naive implementation. we should rather check and clear the R bit
+	kvm_for_each_vcpu(n, vcpu, kvm)
+		r += kvmppc_mmu_pte_flush_hva(vcpu, hva, PAGE_MASK);
+
+	return r ? 1 : 0;
+}
+
+int kvm_test_age_hva(struct kvm *kvm, unsigned long hva)
+{
+	// XXX TODO
+	return 0;
+}
+
+void kvm_set_spte_hva(struct kvm *kvm, unsigned long hva, pte_t pte)
+{
+	/* The page will get remapped properly on its next fault */
+	kvm_unmap_hva(kvm, hva);
+}
+
+/*****************************************/
+
 int kvmppc_core_prepare_memory_region(struct kvm *kvm,
 				      struct kvm_userspace_memory_region *mem)
 {
