@@ -482,4 +482,8 @@ void __init exynos4_timer_init(void)
 	exynos4_timer_resources();
 	exynos4_clocksource_init();
 	exynos4_clockevent_init();
+
+	if (soc_is_exynos5250()) {
+		arch_timer_of_register();
+	}
 }
