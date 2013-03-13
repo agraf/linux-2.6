@@ -103,9 +103,14 @@ static void s5p_setup_vbus_gpio(struct platform_device *pdev)
 	if (!gpio_is_valid(gpio))
 		return;
 
-	err = gpio_request_one(gpio, GPIOF_OUT_INIT_HIGH, "ehci_vbus_gpio");
-	if (err)
+	/* reset pulls the line down, then up again */
+	err = gpio_request_one(gpio, GPIOF_OUT_INIT_LOW, "ehci_vbus_gpio");
+	if (err) {
 		dev_err(&pdev->dev, "can't request ehci vbus gpio %d", gpio);
+		return;
+	}
+	mdelay(1);
+	__gpio_set_value(gpio, 1);
 }
 
 static u64 ehci_s5p_dma_mask = DMA_BIT_MASK(32);
@@ -131,8 +136,6 @@ static int s5p_ehci_probe(struct platform_device *pdev)
 	if (!pdev->dev.coherent_dma_mask)
 		pdev->dev.coherent_dma_mask = DMA_BIT_MASK(32);
 
-	s5p_setup_vbus_gpio(pdev);
-
 	s5p_ehci = devm_kzalloc(&pdev->dev, sizeof(struct s5p_ehci_hcd),
 				GFP_KERNEL);
 	if (!s5p_ehci)
@@ -151,6 +154,8 @@ static int s5p_ehci_probe(struct platform_device *pdev)
 		s5p_ehci->phy = phy;
 		s5p_ehci->otg = phy->otg;
 	}
+
+	s5p_setup_vbus_gpio(pdev);
 
 	s5p_ehci->dev = &pdev->dev;
 
