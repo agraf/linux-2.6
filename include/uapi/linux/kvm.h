@@ -925,6 +925,9 @@ struct kvm_device_attr {
 	__u64	addr;		/* userspace address of attr data */
 };
 
+#define KVM_DEV_TYPE_FSL_MPIC_20	1
+#define KVM_DEV_TYPE_FSL_MPIC_42	2
+
 /* ioctl for vm fd */
 #define KVM_CREATE_DEVICE	  _IOWR(KVMIO,  0xe0, struct kvm_create_device)
 
