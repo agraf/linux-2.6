@@ -72,7 +72,7 @@ struct sample_event {
 
 struct regs_dump {
 	u64 *regs;
-};
+} __attribute__((__may_alias__));
 
 struct stack_dump {
 	u16 offset;

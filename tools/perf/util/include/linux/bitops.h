@@ -96,9 +96,10 @@ find_first_bit(const unsigned long *addr, unsigned long size)
 	const unsigned long *p = addr;
 	unsigned long result = 0;
 	unsigned long tmp;
+	int i = 0;
 
 	while (size & ~(BITS_PER_LONG-1)) {
-		if ((tmp = *(p++)))
+		if ((tmp = p[i++]))
 			goto found;
 		result += BITS_PER_LONG;
 		size -= BITS_PER_LONG;
@@ -106,7 +107,7 @@ find_first_bit(const unsigned long *addr, unsigned long size)
 	if (!size)
 		return result;
 
-	tmp = (*p) & (~0UL >> (BITS_PER_LONG - size));
+	tmp = (p[i]) & (~0UL >> (BITS_PER_LONG - size));
 	if (tmp == 0UL)		/* Are any bits set? */
 		return result + size;	/* Nope. */
 found:
