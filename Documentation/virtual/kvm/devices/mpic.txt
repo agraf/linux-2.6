@@ -35,3 +35,14 @@ Groups:
 
     "attr" is the IRQ number.  IRQ numbers for standard sources are the
     byte offset of the relevant IVPR from EIVPR0, divided by 32.
+
+IRQ Routing:
+
+  The MPIC emulation supports IRQ routing. Only a single MPIC device can
+  be instantiated. Once that device has been created, it's available as
+  irqchip id 0.
+
+  This irqchip 0 has 256 interrupt pins. These pins reflect the SRC pins
+  on the MPIC controller.
+
+  Access to on-SRC registers is not implemented through IRQ routing mechanisms.

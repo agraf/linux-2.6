@@ -1029,6 +1029,7 @@ static int openpic_cpu_write_internal(void *opaque, gpa_t addr,
 	struct irq_source *src;
 	struct irq_dest *dst;
 	int s_IRQ, n_IRQ;
+	int notify_eoi = -1;
 
 	pr_debug("%s: cpu %d addr %#llx <= 0x%08x\n", __func__, idx,
 		addr, val);
@@ -1087,6 +1088,8 @@ static int openpic_cpu_write_internal(void *opaque, gpa_t addr,
 		}
 
 		IRQ_resetbit(&dst->servicing, s_IRQ);
+		/* Notify listeners that the IRQ is over */
+		notify_eoi = s_IRQ;
 		/* Set up next servicing IRQ */
 		s_IRQ = IRQ_get_next(opp, &dst->servicing);
 		/* Check queued interrupts. */
@@ -1102,6 +1105,12 @@ static int openpic_cpu_write_internal(void *opaque, gpa_t addr,
 		break;
 	default:
 		break;
+	}
+
+	if (notify_eoi != -1) {
+		spin_unlock_irq(&opp->lock);
+		kvm_notify_acked_irq(opp->kvm, 0, notify_eoi);
+		spin_lock_irq(&opp->lock);
 	}
 
 	return 0;
@@ -1639,13 +1648,41 @@ static void mpic_destroy(struct kvm_device *dev)
 		unmap_mmio(opp);
 	}
 
+	dev->kvm->arch.mpic = NULL;
 	kfree(opp);
+}
+
+static int mpic_set_default_irq_routing(struct openpic *opp)
+{
+	int i;
+	struct kvm_irq_routing_entry *routing;
+
+	/* XXX be more dynamic if we ever want to support multiple MPIC chips */
+	routing = kzalloc((sizeof(*routing) * opp->nb_irqs), GFP_KERNEL);
+	if (!routing)
+		return -ENOMEM;
+
+	for (i = 0; i < opp->nb_irqs; i++) {
+		routing[i].gsi = i;
+		routing[i].type = KVM_IRQ_ROUTING_IRQCHIP;
+		routing[i].u.irqchip.irqchip = 0;
+		routing[i].u.irqchip.pin = i;
+	}
+
+	kvm_set_irq_routing(opp->kvm, routing, opp->nb_irqs, 0);
+
+	kfree(routing);
+	return 0;
 }
 
 static int mpic_create(struct kvm_device *dev, u32 type)
 {
 	struct openpic *opp;
 	int ret;
+
+	/* We only support one MPIC at a time for now */
+	if (dev->kvm->arch.mpic)
+		return -EINVAL;
 
 	opp = kzalloc(sizeof(struct openpic), GFP_KERNEL);
 	if (!opp)
@@ -1691,7 +1728,15 @@ static int mpic_create(struct kvm_device *dev, u32 type)
 		goto err;
 	}
 
+	ret = mpic_set_default_irq_routing(opp);
+	if (ret)
+		goto err;
+
 	openpic_reset(opp);
+
+	smp_wmb();
+	dev->kvm->arch.mpic = opp;
+
 	return 0;
 
 err:
@@ -1760,4 +1805,72 @@ void kvmppc_mpic_disconnect_vcpu(struct openpic *opp, struct kvm_vcpu *vcpu)
 
 	opp->dst[vcpu->arch.irq_cpu_id].vcpu = NULL;
 	kvm_device_put(opp->dev);
+}
+
+/*
+ * Return value:
+ *  < 0   Interrupt was ignored (masked or not delivered for other reasons)
+ *  = 0   Interrupt was coalesced (previous irq is still pending)
+ *  > 0   Number of CPUs interrupt was delivered to
+ */
+static int mpic_set_irq(struct kvm_kernel_irq_routing_entry *e,
+			struct kvm *kvm, int irq_source_id, int level,
+			bool line_status)
+{
+	u32 irq = e->irqchip.pin;
+	struct openpic *opp = kvm->arch.mpic;
+
+	spin_lock_irq(&opp->lock);
+	openpic_set_irq(opp, irq, level);
+	spin_unlock_irq(&opp->lock);
+
+	/* All code paths we care about don't check for the return value */
+	return 0;
+}
+
+int kvm_set_msi(struct kvm_kernel_irq_routing_entry *e,
+		struct kvm *kvm, int irq_source_id, int level, bool line_status)
+{
+	struct openpic *opp = kvm->arch.mpic;
+	spin_lock_irq(&opp->lock);
+
+	/*
+	 * XXX We ignore the target address for now, as we only support
+	 *     a single MSI bank.
+	 */
+	openpic_msi_write(kvm->arch.mpic, MSIIR_OFFSET, e->msi.data);
+	spin_unlock_irq(&opp->lock);
+
+	/* All code paths we care about don't check for the return value */
+	return 0;
+}
+
+int kvm_set_routing_entry(struct kvm_irq_routing_table *rt,
+			  struct kvm_kernel_irq_routing_entry *e,
+			  const struct kvm_irq_routing_entry *ue)
+{
+	int r = -EINVAL;
+
+	switch (ue->type) {
+	case KVM_IRQ_ROUTING_IRQCHIP:
+		e->set = mpic_set_irq;
+		e->irqchip.irqchip = ue->u.irqchip.irqchip;
+		e->irqchip.pin = ue->u.irqchip.pin;
+		if (e->irqchip.pin >= KVM_IRQCHIP_NUM_PINS)
+			goto out;
+		rt->chip[ue->u.irqchip.irqchip][e->irqchip.pin] = ue->gsi;
+		break;
+	case KVM_IRQ_ROUTING_MSI:
+		e->set = kvm_set_msi;
+		e->msi.address_lo = ue->u.msi.address_lo;
+		e->msi.address_hi = ue->u.msi.address_hi;
+		e->msi.data = ue->u.msi.data;
+		break;
+	default:
+		goto out;
+	}
+
+	r = 0;
+out:
+	return r;
 }
