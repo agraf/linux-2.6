@@ -429,6 +429,10 @@
 		vdd-supply = <&ldo8_reg>;
 	};
 
+	usb@12110000 {
+		samsung,reset-gpio = <&gpx3 5 1>;
+	};
+
 	mmc_reg: voltage-regulator {
 		compatible = "regulator-fixed";
 		regulator-name = "VDD_33ON_2.8V";
