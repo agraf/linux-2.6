@@ -12,6 +12,7 @@ config 64BIT
 config SPARC
 	bool
 	default y
+	select ARCH_MIGHT_HAVE_PC_PARPORT if SPARC64 && PCI
 	select OF
 	select OF_PROMTREE
 	select HAVE_IDE
@@ -63,6 +64,7 @@ config SPARC64
 	select HAVE_DYNAMIC_FTRACE
 	select HAVE_FTRACE_MCOUNT_RECORD
 	select HAVE_SYSCALL_TRACEPOINTS
+	select HAVE_CONTEXT_TRACKING
 	select HAVE_DEBUG_KMEMLEAK
 	select RTC_DRV_CMOS
 	select RTC_DRV_BQ4802
