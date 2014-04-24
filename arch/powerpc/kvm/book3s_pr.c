@@ -1110,6 +1110,9 @@ static int kvmppc_get_one_reg_pr(struct kvm_vcpu *vcpu, u64 id,
 	case KVM_REG_PPC_HIOR:
 		*val = get_reg_val(id, to_book3s(vcpu)->hior);
 		break;
+	case KVM_REG_PPC_LPCR:
+		*val = get_reg_val(id, to_book3s(vcpu)->lpcr);
+		break;
 	default:
 		r = -EINVAL;
 		break;
@@ -1127,6 +1130,9 @@ static int kvmppc_set_one_reg_pr(struct kvm_vcpu *vcpu, u64 id,
 	case KVM_REG_PPC_HIOR:
 		to_book3s(vcpu)->hior = set_reg_val(id, *val);
 		to_book3s(vcpu)->hior_explicit = true;
+		break;
+	case KVM_REG_PPC_LPCR:
+		to_book3s(vcpu)->lpcr = set_reg_val(id, *val) & LPCR_ILE;
 		break;
 	default:
 		r = -EINVAL;

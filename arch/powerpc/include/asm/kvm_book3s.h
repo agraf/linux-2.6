@@ -106,6 +106,7 @@ struct kvmppc_vcpu_book3s {
 #endif
 	int hpte_cache_count;
 	spinlock_t mmu_lock;
+	ulong lpcr;
 };
 
 #define CONTEXT_HOST		0
