@@ -38,7 +38,13 @@
 
 static void kvmppc_mmu_book3s_64_reset_msr(struct kvm_vcpu *vcpu)
 {
-	kvmppc_set_msr(vcpu, MSR_SF);
+	struct kvmppc_vcpu_book3s *vcpu_book3s = to_book3s(vcpu);
+	ulong new_msr = MSR_SF;
+
+	if (vcpu_book3s->lpcr & LPCR_ILE)
+		new_msr |= MSR_LE;
+
+	kvmppc_set_msr(vcpu, new_msr);
 }
 
 static struct kvmppc_slb *kvmppc_mmu_book3s_64_find_slbe(
