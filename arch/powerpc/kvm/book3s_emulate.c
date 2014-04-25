@@ -563,6 +563,7 @@ int kvmppc_core_emulate_mfspr_pr(struct kvm_vcpu *vcpu, int sprn, ulong *spr_val
 	case SPRN_MMCR0:
 	case SPRN_MMCR1:
 	case SPRN_MMCR2:
+	case SPRN_TIR:
 		*spr_val = 0;
 		break;
 	default:
