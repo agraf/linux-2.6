@@ -788,7 +788,8 @@ static int kvmppc_handle_fac(struct kvm_vcpu *vcpu, ulong fac)
 {
 	BUG_ON(!cpu_has_feature(CPU_FTR_ARCH_207S));
 
-	if (!(vcpu->arch.fscr & (1ULL << fac))) {
+	/* We get TM interrupts only when EBB is disabled? Sigh. */
+	if ((fac != FSCR_TM_LG) && !(vcpu->arch.fscr & (1ULL << fac))) {
 		/* Facility not enabled by the guest */
 		kvmppc_trigger_fac_interrupt(vcpu, fac);
 		return RESUME_GUEST;

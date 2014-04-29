@@ -450,6 +450,15 @@ int kvmppc_core_emulate_mtspr_pr(struct kvm_vcpu *vcpu, int sprn, ulong spr_val)
 	case SPRN_EBBRR:
 		vcpu->arch.ebbrr = spr_val;
 		break;
+	case SPRN_TFHAR:
+		vcpu->arch.tfhar = spr_val;
+		break;
+	case SPRN_TEXASR:
+		vcpu->arch.texasr = spr_val;
+		break;
+	case SPRN_TFIAR:
+		vcpu->arch.tfiar = spr_val;
+		break;
 	case SPRN_ICTC:
 	case SPRN_THRM1:
 	case SPRN_THRM2:
@@ -566,6 +575,15 @@ int kvmppc_core_emulate_mfspr_pr(struct kvm_vcpu *vcpu, int sprn, ulong *spr_val
 		break;
 	case SPRN_EBBRR:
 		*spr_val = vcpu->arch.ebbrr;
+		break;
+	case SPRN_TFHAR:
+		*spr_val = vcpu->arch.tfhar;
+		break;
+	case SPRN_TEXASR:
+		*spr_val = vcpu->arch.texasr;
+		break;
+	case SPRN_TFIAR:
+		*spr_val = vcpu->arch.tfiar;
 		break;
 	case SPRN_THRM1:
 	case SPRN_THRM2:
