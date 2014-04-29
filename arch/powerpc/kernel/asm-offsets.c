@@ -535,6 +535,7 @@ int main(void)
 	DEFINE(VCPU_CFAR, offsetof(struct kvm_vcpu, arch.cfar));
 	DEFINE(VCPU_PPR, offsetof(struct kvm_vcpu, arch.ppr));
 	DEFINE(VCPU_FSCR, offsetof(struct kvm_vcpu, arch.fscr));
+	DEFINE(VCPU_SHADOW_FSCR, offsetof(struct kvm_vcpu, arch.shadow_fscr));
 	DEFINE(VCPU_PSPB, offsetof(struct kvm_vcpu, arch.pspb));
 	DEFINE(VCPU_EBBHR, offsetof(struct kvm_vcpu, arch.ebbhr));
 	DEFINE(VCPU_EBBRR, offsetof(struct kvm_vcpu, arch.ebbrr));
@@ -616,6 +617,7 @@ int main(void)
 #ifdef CONFIG_PPC64
 	SVCPU_FIELD(SVCPU_SLB, slb);
 	SVCPU_FIELD(SVCPU_SLB_MAX, slb_max);
+	SVCPU_FIELD(SVCPU_SHADOW_FSCR, shadow_fscr);
 #endif
 
 	HSTATE_FIELD(HSTATE_HOST_R1, host_r1);
@@ -651,6 +653,7 @@ int main(void)
 #ifdef CONFIG_PPC_BOOK3S_64
 	HSTATE_FIELD(HSTATE_CFAR, cfar);
 	HSTATE_FIELD(HSTATE_PPR, ppr);
+	HSTATE_FIELD(HSTATE_HOST_FSCR, host_fscr);
 #endif /* CONFIG_PPC_BOOK3S_64 */
 
 #else /* CONFIG_PPC_BOOK3S */
