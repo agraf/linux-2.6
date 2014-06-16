@@ -36,6 +36,12 @@
 #define NAPPING_CEDE	1
 #define NAPPING_NOVCPU	2
 
+#if defined(_CALL_ELF) && _CALL_ELF == 2
+#define FUNC(name) 		name
+#else
+#define FUNC(name) 		GLUE(.,name)
+#endif
+
 /*
  * Call kvmppc_hv_entry in real mode.
  * Must be called with interrupts hard-disabled.
@@ -668,9 +674,9 @@ END_FTR_SECTION_IFCLR(CPU_FTR_TM)
 
 	mr	r31, r4
 	addi	r3, r31, VCPU_FPRS_TM
-	bl	.load_fp_state
+	bl	FUNC(load_fp_state)
 	addi	r3, r31, VCPU_VRS_TM
-	bl	.load_vr_state
+	bl	FUNC(load_vr_state)
 	mr	r4, r31
 	lwz	r7, VCPU_VRSAVE_TM(r4)
 	mtspr	SPRN_VRSAVE, r7
@@ -1414,9 +1420,9 @@ END_FTR_SECTION_IFCLR(CPU_FTR_TM)
 
 	/* Save FP/VSX. */
 	addi	r3, r9, VCPU_FPRS_TM
-	bl	.store_fp_state
+	bl	FUNC(store_fp_state)
 	addi	r3, r9, VCPU_VRS_TM
-	bl	.store_vr_state
+	bl	FUNC(store_vr_state)
 	mfspr	r6, SPRN_VRSAVE
 	stw	r6, VCPU_VRSAVE_TM(r9)
 1:
@@ -2405,11 +2411,11 @@ END_FTR_SECTION_IFSET(CPU_FTR_VSX)
 	mtmsrd	r8
 	isync
 	addi	r3,r3,VCPU_FPRS
-	bl	.store_fp_state
+	bl	FUNC(store_fp_state)
 #ifdef CONFIG_ALTIVEC
 BEGIN_FTR_SECTION
 	addi	r3,r31,VCPU_VRS
-	bl	.store_vr_state
+	bl	FUNC(store_vr_state)
 END_FTR_SECTION_IFSET(CPU_FTR_ALTIVEC)
 #endif
 	mfspr	r6,SPRN_VRSAVE
@@ -2441,11 +2447,11 @@ END_FTR_SECTION_IFSET(CPU_FTR_VSX)
 	mtmsrd	r8
 	isync
 	addi	r3,r4,VCPU_FPRS
-	bl	.load_fp_state
+	bl	FUNC(load_fp_state)
 #ifdef CONFIG_ALTIVEC
 BEGIN_FTR_SECTION
 	addi	r3,r31,VCPU_VRS
-	bl	.load_vr_state
+	bl	FUNC(load_vr_state)
 END_FTR_SECTION_IFSET(CPU_FTR_ALTIVEC)
 #endif
 	lwz	r7,VCPU_VRSAVE(r31)
