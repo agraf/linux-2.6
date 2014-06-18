@@ -397,6 +397,11 @@ int kvmppc_emulate_any_instruction(struct kvm_vcpu *vcpu)
 		value = kvmppc_get_gpr(vcpu, get_rs(inst));
 		emulated = kvmppc_emulate_store(vcpu, addr, value, 8);
 		break;
+	case OP_STW:
+		addr = get_addr(vcpu, (s16)get_d(inst), get_ra(inst));
+		value = kvmppc_get_gpr(vcpu, get_rs(inst));
+		emulated = kvmppc_emulate_store(vcpu, addr, value, 4);
+		break;
 	default:
 		emulated = EMULATE_FAIL;
 		break;
