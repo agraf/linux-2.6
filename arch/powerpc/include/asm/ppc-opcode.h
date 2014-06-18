@@ -116,6 +116,7 @@
 
 #define OP_CMPI 11
 #define OP_ADDIS 15
+#define OP_BC   16
 #define OP_ORI  24
 #define OP_ANDI 28
 #define OP_LWZ  32

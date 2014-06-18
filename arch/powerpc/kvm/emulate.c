@@ -473,6 +473,54 @@ static int kvmppc_emulate_cmp(struct kvm_vcpu *vcpu, u64 value0, u64 value1,
 	return EMULATE_DONE;
 }
 
+int kvmppc_emulate_bc(struct kvm_vcpu *vcpu, u32 inst, bool is_32bit)
+{
+	u64 addr = (s64)(s16)get_d(inst);
+	int bo = get_rt(inst);
+	int bi = get_ra(inst);
+
+	/* If not absolute, PC gets added */
+	if (!(inst & 0x2))
+		addr += kvmppc_get_pc(vcpu);
+	if (is_32bit)
+		addr = (u32)addr;
+
+	/* LR gets set with LK=1 */
+	if (inst & 0x1)
+		kvmppc_set_lr(vcpu, kvmppc_get_pc(vcpu) + 4);
+
+	/* CTR handling */
+	if (!(bo & 0x4)) {
+		ulong ctr = kvmppc_get_ctr(vcpu);
+		ctr--;
+		if (is_32bit)
+			ctr = (u32)ctr;
+		kvmppc_set_ctr(vcpu, ctr);
+		if (((bo & 0x2) && (ctr != 0)) ||
+		   (!(bo & 0x2) && (ctr == 0))) {
+			/* Condition not fulfilled, go to next inst */
+			return EMULATE_DONE;
+		}
+	}
+
+	/* CR handling */
+	if (!(bo & 0x10)) {
+		uint32_t mask = 1 << (3 - (bi & 0x3));
+		u32 cr_part = kvmppc_get_cr(vcpu) >> (28 - (bi & ~0x3));
+		if (((bo & 0x8) && (cr_part != mask)) ||
+		   (!(bo & 0x8) && (cr_part == mask))) {
+			/* Condition not fulfilled, go to next inst */
+			return EMULATE_DONE;
+		}
+	}
+
+	/* Off we branch ... */
+	kvmppc_set_pc(vcpu, addr);
+
+	/* Indicate that we don't want to advance the PC */
+	return EMULATE_AGAIN;
+}
+
 /* Emulates privileged and non-privileged instructions */
 int kvmppc_emulate_any_instruction(struct kvm_vcpu *vcpu)
 {
@@ -535,6 +583,9 @@ int kvmppc_emulate_any_instruction(struct kvm_vcpu *vcpu)
 		value = kvmppc_get_gpr(vcpu, get_ra(inst));
 		kvmppc_emulate_cmp(vcpu, value, (s16)get_d(inst), true,
 				   get_rt(inst) >> 2, !(get_rt(inst) & 1));
+		break;
+	case OP_BC:
+		emulated = kvmppc_emulate_bc(vcpu, inst, is_32bit);
 		break;
 	case 31:
 		switch (get_xop(inst)) {
