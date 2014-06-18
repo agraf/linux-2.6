@@ -209,14 +209,13 @@ static int kvmppc_emulate_mfspr(struct kvm_vcpu *vcpu, int sprn, int rt)
 
 /* XXX Should probably auto-generate instruction decoding for a particular core
  * from opcode tables in the future. */
-int kvmppc_emulate_instruction(struct kvm_run *run, struct kvm_vcpu *vcpu)
+static int kvmppc_emulate_priv_instruction(struct kvm_vcpu *vcpu, int *advance)
 {
 	u32 inst = kvmppc_get_last_inst(vcpu);
 	int rs = get_rs(inst);
 	int rt = get_rt(inst);
 	int sprn = get_sprn(inst);
 	enum emulation_result emulated = EMULATE_DONE;
-	int advance = 1;
 
 	/* this default type might be overwritten by subcategories */
 	kvmppc_set_exit_type(vcpu, EMULATED_INST_EXITS);
@@ -232,7 +231,7 @@ int kvmppc_emulate_instruction(struct kvm_run *run, struct kvm_vcpu *vcpu)
 		kvmppc_core_queue_program(vcpu,
 					  vcpu->arch.shared->esr | ESR_PTR);
 #endif
-		advance = 0;
+		*advance = 0;
 		break;
 
 	case 31:
@@ -248,7 +247,7 @@ int kvmppc_emulate_instruction(struct kvm_run *run, struct kvm_vcpu *vcpu)
 			kvmppc_core_queue_program(vcpu,
 					vcpu->arch.shared->esr | ESR_PTR);
 #endif
-			advance = 0;
+			*advance = 0;
 			break;
 
 		case OP_31_XOP_MFSPR:
@@ -272,6 +271,17 @@ int kvmppc_emulate_instruction(struct kvm_run *run, struct kvm_vcpu *vcpu)
 		emulated = EMULATE_FAIL;
 	}
 
+	return emulated;
+}
+
+/* Emulates privileged instructions only */
+int kvmppc_emulate_instruction(struct kvm_run *run, struct kvm_vcpu *vcpu)
+{
+	u32 inst = kvmppc_get_last_inst(vcpu);
+	enum emulation_result emulated;
+	int advance = 1;
+
+	emulated = kvmppc_emulate_priv_instruction(vcpu, &advance);
 	if (emulated == EMULATE_FAIL) {
 		emulated = vcpu->kvm->arch.kvm_ops->emulate_op(run, vcpu, inst,
 							       &advance);
@@ -294,3 +304,40 @@ int kvmppc_emulate_instruction(struct kvm_run *run, struct kvm_vcpu *vcpu)
 	return emulated;
 }
 EXPORT_SYMBOL_GPL(kvmppc_emulate_instruction);
+
+/* Emulates privileged and non-privileged instructions */
+int kvmppc_emulate_any_instruction(struct kvm_vcpu *vcpu)
+{
+	u32 inst = kvmppc_get_last_inst(vcpu);
+	enum emulation_result emulated = EMULATE_DONE;
+	int advance = 1;
+
+	kvmppc_set_exit_type(vcpu, EMULATED_INST_EXITS);
+
+	/* Try non-privileged instructions */
+	switch (get_op(inst)) {
+	default:
+		emulated = EMULATE_FAIL;
+	}
+
+	/* Try privileged instructions */
+	if (emulated == EMULATE_FAIL)
+		emulated = kvmppc_emulate_priv_instruction(vcpu, &advance);
+
+	if (emulated == EMULATE_AGAIN) {
+		advance = 0;
+	} else if (emulated == EMULATE_FAIL) {
+		advance = 0;
+		printk(KERN_ERR "Couldn't emulate instruction 0x%08x "
+		       "(op %d xop %d)\n", inst, get_op(inst), get_xop(inst));
+		kvmppc_core_queue_program(vcpu, 0);
+	}
+
+	trace_kvm_ppc_instr(inst, kvmppc_get_pc(vcpu), emulated);
+
+	/* Advance past emulated instruction. */
+	if (advance)
+		kvmppc_set_pc(vcpu, kvmppc_get_pc(vcpu) + 4);
+
+	return emulated;
+}
