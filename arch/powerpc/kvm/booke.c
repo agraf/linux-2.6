@@ -349,23 +349,10 @@ static int kvmppc_booke_irqprio_deliver(struct kvm_vcpu *vcpu,
 	int allowed = 0;
 	ulong msr_mask = 0;
 	bool update_esr = false, update_dear = false, update_epr = false;
-	ulong crit_raw = vcpu->arch.shared->critical;
-	ulong crit_r1 = kvmppc_get_gpr(vcpu, 1);
-	bool crit;
+	bool crit = kvmppc_critical_section(vcpu);
 	bool keep_irq = false;
 	enum int_class int_class;
 	ulong new_msr = vcpu->arch.shared->msr;
-
-	/* Truncate crit indicators in 32 bit mode */
-	if (!(vcpu->arch.shared->msr & MSR_SF)) {
-		crit_raw &= 0xffffffff;
-		crit_r1 &= 0xffffffff;
-	}
-
-	/* Critical section when crit == r1 */
-	crit = (crit_raw == crit_r1);
-	/* ... and we're in supervisor mode */
-	crit = crit && !(vcpu->arch.shared->msr & MSR_PR);
 
 	if (priority == BOOKE_IRQPRIO_EXTERNAL_LEVEL) {
 		priority = BOOKE_IRQPRIO_EXTERNAL;
