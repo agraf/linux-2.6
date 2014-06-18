@@ -114,6 +114,7 @@
 #define OP_31_XOP_LHBRX     790
 #define OP_31_XOP_STHBRX    918
 
+#define OP_CMPI 11
 #define OP_ADDIS 15
 #define OP_ORI  24
 #define OP_ANDI 28
