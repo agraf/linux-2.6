@@ -305,10 +305,86 @@ int kvmppc_emulate_instruction(struct kvm_run *run, struct kvm_vcpu *vcpu)
 }
 EXPORT_SYMBOL_GPL(kvmppc_emulate_instruction);
 
+static ulong get_addr(struct kvm_vcpu *vcpu, int offset, int ra)
+{
+	ulong addr = 0;
+#if defined(CONFIG_PPC_BOOK3E_64)
+	ulong msr_64bit = MSR_CM;
+#elif defined(CONFIG_PPC_BOOK3S_64)
+	ulong msr_64bit = MSR_SF;
+#else
+	ulong msr_64bit = 0;
+#endif
+
+	if (ra)
+		addr = kvmppc_get_gpr(vcpu, ra);
+
+	addr += offset;
+	if (!(kvmppc_get_msr(vcpu) & msr_64bit))
+		addr = (uint32_t)addr;
+
+	return addr;
+}
+
+static int kvmppc_emulate_store(struct kvm_vcpu *vcpu, ulong addr, u64 value,
+				int size)
+{
+	ulong paddr = addr;
+	int r;
+
+	if (kvmppc_need_byteswap(vcpu)) {
+		switch (size) {
+		case 1: *(u8*)&value = value; break;
+		case 2: *(u16*)&value = swab16(value); break;
+		case 4: *(u32*)&value = swab32(value); break;
+		case 8: *(u64*)&value = swab64(value); break;
+		}
+	} else {
+		switch (size) {
+		case 1: *(u8*)&value = value; break;
+		case 2: *(u16*)&value = value; break;
+		case 4: *(u32*)&value = value; break;
+		case 8: *(u64*)&value = value; break;
+		}
+	}
+
+	r = kvmppc_st(vcpu, &paddr, size, &value, true);
+	switch (r) {
+	case -ENOENT:
+#ifdef CONFIG_PPC_BOOK3S
+		kvmppc_core_queue_data_storage(vcpu, addr,
+			DSISR_ISSTORE | DSISR_NOHPTE);
+#else
+		kvmppc_core_queue_dtlb_miss(vcpu, addr, ESR_DST | ESR_ST);
+#endif
+		r = EMULATE_AGAIN;
+		break;
+	case -EPERM:
+#ifdef CONFIG_PPC_BOOK3S
+		kvmppc_core_queue_data_storage(vcpu, addr,
+			DSISR_ISSTORE | DSISR_PROTFAULT);
+#else
+		kvmppc_core_queue_data_storage(vcpu, addr, ESR_ST);
+#endif
+		r = EMULATE_AGAIN;
+		break;
+	case EMULATE_DO_MMIO:
+		vcpu->stat.mmio_exits++;
+		vcpu->arch.paddr_accessed = paddr;
+		vcpu->arch.vaddr_accessed = addr;
+		vcpu->run->exit_reason = KVM_EXIT_MMIO;
+		r = kvmppc_emulate_loadstore(vcpu);
+		break;
+	}
+
+	return r;
+}
+
 /* Emulates privileged and non-privileged instructions */
 int kvmppc_emulate_any_instruction(struct kvm_vcpu *vcpu)
 {
 	u32 inst = kvmppc_get_last_inst(vcpu);
+	ulong addr, value;
 	enum emulation_result emulated = EMULATE_DONE;
 	int advance = 1;
 
@@ -316,8 +392,14 @@ int kvmppc_emulate_any_instruction(struct kvm_vcpu *vcpu)
 
 	/* Try non-privileged instructions */
 	switch (get_op(inst)) {
+	case OP_STD:
+		addr = get_addr(vcpu, (s16)get_d(inst), get_ra(inst));
+		value = kvmppc_get_gpr(vcpu, get_rs(inst));
+		emulated = kvmppc_emulate_store(vcpu, addr, value, 8);
+		break;
 	default:
 		emulated = EMULATE_FAIL;
+		break;
 	}
 
 	/* Try privileged instructions */

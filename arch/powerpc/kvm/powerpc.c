@@ -158,8 +158,12 @@ int kvmppc_prepare_to_enter(struct kvm_vcpu *vcpu)
 		if (kvmppc_needs_emulation(vcpu)) {
 			/* Emulate one instruction, then try again */
 			local_irq_enable();
+
 			vcpu->arch.last_inst = KVM_INST_FETCH_FAILED;
-			kvmppc_emulate_any_instruction(vcpu);
+			r = kvmppc_emulate_any_instruction(vcpu);
+			if (r == EMULATE_DO_MMIO)
+				return 0;
+
 			hard_irq_disable();
 			continue;
 		}
