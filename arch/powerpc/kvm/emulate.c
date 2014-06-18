@@ -468,6 +468,11 @@ int kvmppc_emulate_any_instruction(struct kvm_vcpu *vcpu)
 		if (emulated == EMULATE_DONE)
 			kvmppc_set_gpr(vcpu, get_rt(inst), value);
 		break;
+	case OP_LWZ:
+		addr = get_addr(vcpu, (s16)get_d(inst), get_ra(inst));
+		emulated = kvmppc_emulate_load(vcpu, addr, &value, 4);
+		kvmppc_set_gpr(vcpu, get_rt(inst), value);
+		break;
 	default:
 		emulated = EMULATE_FAIL;
 		break;
