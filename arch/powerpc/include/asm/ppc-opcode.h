@@ -113,6 +113,7 @@
 #define OP_31_XOP_STHBRX    918
 
 #define OP_ADDIS 15
+#define OP_ORI  24
 #define OP_LWZ  32
 #define OP_LD   58
 #define OP_LWZU 33
