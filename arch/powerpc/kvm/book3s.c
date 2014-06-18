@@ -90,32 +90,6 @@ static inline void kvmppc_update_int_pending(struct kvm_vcpu *vcpu,
 		kvmppc_set_int_pending(vcpu, 0);
 }
 
-static inline bool kvmppc_critical_section(struct kvm_vcpu *vcpu)
-{
-	ulong crit_raw;
-	ulong crit_r1;
-	bool crit;
-
-	if (is_kvmppc_hv_enabled(vcpu->kvm))
-		return false;
-
-	crit_raw = kvmppc_get_critical(vcpu);
-	crit_r1 = kvmppc_get_gpr(vcpu, 1);
-
-	/* Truncate crit indicators in 32 bit mode */
-	if (!(kvmppc_get_msr(vcpu) & MSR_SF)) {
-		crit_raw &= 0xffffffff;
-		crit_r1 &= 0xffffffff;
-	}
-
-	/* Critical section when crit == r1 */
-	crit = (crit_raw == crit_r1);
-	/* ... and we're in supervisor mode */
-	crit = crit && !(kvmppc_get_msr(vcpu) & MSR_PR);
-
-	return crit;
-}
-
 void kvmppc_inject_interrupt(struct kvm_vcpu *vcpu, int vec, u64 flags)
 {
 	kvmppc_set_srr0(vcpu, kvmppc_get_pc(vcpu));
