@@ -434,12 +434,52 @@ static int kvmppc_emulate_load(struct kvm_vcpu *vcpu, ulong addr, u64 *value,
 	return r;
 }
 
+static int kvmppc_emulate_cmp(struct kvm_vcpu *vcpu, u64 value0, u64 value1,
+			      bool cmp_signed, int crf, bool is_32bit)
+{
+	bool lt, gt, eq;
+	u32 cr = 0;
+	u32 cr_mask;
+
+	if (cmp_signed) {
+		s64 signed0 = value0;
+		s64 signed1 = value1;
+
+		if (is_32bit) {
+			signed0 = (s64)(s32)signed0;
+			signed1 = (s64)(s32)signed1;
+		}
+		lt = signed0 < signed1;
+		gt = signed0 > signed1;
+		eq = signed0 == signed1;
+	} else {
+		if (is_32bit) {
+			value0 = (u32)value0;
+			value1 = (u32)value1;
+		}
+		lt = value0 < value1;
+		gt = value0 > value1;
+		eq = value0 == value1;
+	}
+
+	if (lt) cr |= 0x8;
+	if (gt) cr |= 0x4;
+	if (eq) cr |= 0x2;
+	cr <<= ((7 - crf) * 4);
+	cr_mask = 0xf << ((7 - crf) * 4);
+	cr |= kvmppc_get_cr(vcpu) & ~cr_mask;
+	kvmppc_set_cr(vcpu, cr);
+
+	return EMULATE_DONE;
+}
+
 /* Emulates privileged and non-privileged instructions */
 int kvmppc_emulate_any_instruction(struct kvm_vcpu *vcpu)
 {
 	u32 inst = kvmppc_get_last_inst(vcpu);
 	ulong addr;
 	u64 value;
+	bool is_32bit = !(kvmppc_get_msr(vcpu) & MSR_SF);
 	enum emulation_result emulated = EMULATE_DONE;
 	int advance = 1;
 
@@ -489,6 +529,14 @@ int kvmppc_emulate_any_instruction(struct kvm_vcpu *vcpu)
 		switch (get_xop(inst)) {
 		case OP_31_XOP_MFCR:
 			kvmppc_set_gpr(vcpu, get_rt(inst), kvmppc_get_cr(vcpu));
+			break;
+		case OP_31_XOP_AND:
+			value = kvmppc_get_gpr(vcpu, get_rs(inst));
+			value &= kvmppc_get_gpr(vcpu, get_rb(inst));
+			kvmppc_set_gpr(vcpu, get_ra(inst), value);
+			if (get_rc(inst))
+				kvmppc_emulate_cmp(vcpu, value, 0, true, 0,
+						   is_32bit);
 			break;
 		default:
 			emulated = EMULATE_FAIL;
