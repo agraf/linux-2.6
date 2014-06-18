@@ -521,6 +521,28 @@ int kvmppc_emulate_bc(struct kvm_vcpu *vcpu, u32 inst, bool is_32bit)
 	return EMULATE_AGAIN;
 }
 
+int kvmppc_emulate_mtcrf(struct kvm_vcpu *vcpu, u32 inst)
+{
+	u32 value = kvmppc_get_cr(vcpu);
+	u32 new_cr = kvmppc_get_gpr(vcpu, get_rs(inst));
+	u32 mask = 0;
+	int fxm = (inst >> 12) & 0xff;
+
+	if (fxm & 0x80) mask |= 0xf0000000;
+	if (fxm & 0x40) mask |= 0x0f000000;
+	if (fxm & 0x20) mask |= 0x00f00000;
+	if (fxm & 0x10) mask |= 0x000f0000;
+	if (fxm & 0x08) mask |= 0x0000f000;
+	if (fxm & 0x04) mask |= 0x00000f00;
+	if (fxm & 0x02) mask |= 0x000000f0;
+	if (fxm & 0x01) mask |= 0x0000000f;
+
+	value = value & ~mask;
+	value |= new_cr & mask;
+	kvmppc_set_cr(vcpu, value);
+	return EMULATE_DONE;
+}
+
 /* Emulates privileged and non-privileged instructions */
 int kvmppc_emulate_any_instruction(struct kvm_vcpu *vcpu)
 {
@@ -591,6 +613,9 @@ int kvmppc_emulate_any_instruction(struct kvm_vcpu *vcpu)
 		switch (get_xop(inst)) {
 		case OP_31_XOP_MFCR:
 			kvmppc_set_gpr(vcpu, get_rt(inst), kvmppc_get_cr(vcpu));
+			break;
+		case OP_31_XOP_MTCRF:
+			emulated = kvmppc_emulate_mtcrf(vcpu, inst);
 			break;
 		case OP_31_XOP_AND:
 			value = kvmppc_get_gpr(vcpu, get_rs(inst));
