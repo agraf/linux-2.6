@@ -473,6 +473,16 @@ int kvmppc_emulate_any_instruction(struct kvm_vcpu *vcpu)
 		emulated = kvmppc_emulate_load(vcpu, addr, &value, 4);
 		kvmppc_set_gpr(vcpu, get_rt(inst), value);
 		break;
+	case 31:
+		switch (get_xop(inst)) {
+		case OP_31_XOP_MFCR:
+			kvmppc_set_gpr(vcpu, get_rt(inst), kvmppc_get_cr(vcpu));
+			break;
+		default:
+			emulated = EMULATE_FAIL;
+			break;
+		}
+		break;
 	default:
 		emulated = EMULATE_FAIL;
 		break;

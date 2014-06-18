@@ -86,6 +86,7 @@
 #define OP_TRAP_64 2
 
 #define OP_31_XOP_TRAP      4
+#define OP_31_XOP_MFCR      19
 #define OP_31_XOP_LWZX      23
 #define OP_31_XOP_DCBST     54
 #define OP_31_XOP_LWZUX     55
