@@ -525,6 +525,12 @@ int kvmppc_emulate_any_instruction(struct kvm_vcpu *vcpu)
 		value |= get_d(inst);
 		kvmppc_set_gpr(vcpu, get_ra(inst), value);
 		break;
+	case OP_ANDI:
+		value = kvmppc_get_gpr(vcpu, get_rs(inst));
+		value &= get_d(inst);
+		kvmppc_set_gpr(vcpu, get_ra(inst), value);
+		kvmppc_emulate_cmp(vcpu, value, 0, true, 0, is_32bit);
+		break;
 	case 31:
 		switch (get_xop(inst)) {
 		case OP_31_XOP_MFCR:
