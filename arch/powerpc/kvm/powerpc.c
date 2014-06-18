@@ -63,7 +63,7 @@ bool kvmppc_critical_section(struct kvm_vcpu *vcpu)
 	ulong crit_r1;
 	bool crit;
 
-	if (is_kvmppc_hv_enabled(vcpu->kvm))
+	if (!kvmppc_supports_magic_page(vcpu))
 		return false;
 
 	crit_raw = kvmppc_get_critical(vcpu);
