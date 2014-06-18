@@ -117,6 +117,7 @@ extern int kvmppc_core_vcpu_translate(struct kvm_vcpu *vcpu,
 extern void kvmppc_core_vcpu_load(struct kvm_vcpu *vcpu, int cpu);
 extern void kvmppc_core_vcpu_put(struct kvm_vcpu *vcpu);
 
+extern bool kvmppc_crit_inhibited_irq_pending(struct kvm_vcpu *vcpu);
 extern bool kvmppc_critical_section(struct kvm_vcpu *vcpu);
 extern int kvmppc_core_prepare_to_enter(struct kvm_vcpu *vcpu);
 extern int kvmppc_core_pending_dec(struct kvm_vcpu *vcpu);

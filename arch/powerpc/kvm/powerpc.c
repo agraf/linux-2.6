@@ -83,6 +83,20 @@ bool kvmppc_critical_section(struct kvm_vcpu *vcpu)
 	return crit;
 }
 
+static bool kvmppc_needs_emulation(struct kvm_vcpu *vcpu)
+{
+	/* XXX disable emulation for now, until we implemented everything */
+	if (true)
+		return false;
+
+	/* We're in a critical section, but an interrupt is pending */
+	if (kvmppc_critical_section(vcpu) &&
+	    kvmppc_crit_inhibited_irq_pending(vcpu))
+		return true;
+
+	return false;
+}
+
 /*
  * Common checks before entering the guest world.  Call with interrupts
  * disabled.
@@ -138,6 +152,15 @@ int kvmppc_prepare_to_enter(struct kvm_vcpu *vcpu)
 		if (kvmppc_core_prepare_to_enter(vcpu)) {
 			/* interrupts got enabled in between, so we
 			   are back at square 1 */
+			continue;
+		}
+
+		if (kvmppc_needs_emulation(vcpu)) {
+			/* Emulate one instruction, then try again */
+			local_irq_enable();
+			vcpu->arch.last_inst = KVM_INST_FETCH_FAILED;
+			kvmppc_emulate_any_instruction(vcpu);
+			hard_irq_disable();
 			continue;
 		}
 

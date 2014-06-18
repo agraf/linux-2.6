@@ -342,6 +342,41 @@ static unsigned long get_guest_epr(struct kvm_vcpu *vcpu)
 #endif
 }
 
+bool kvmppc_crit_inhibited_irq_pending(struct kvm_vcpu *vcpu)
+{
+	unsigned long *p = &vcpu->arch.pending_exceptions;
+	bool ee = !!(kvmppc_get_msr(vcpu) & MSR_EE);
+	bool ce = !!(kvmppc_get_msr(vcpu) & MSR_CE);
+	bool me = !!(kvmppc_get_msr(vcpu) & MSR_ME);
+	bool de = !!(kvmppc_get_msr(vcpu) & MSR_DE);
+
+	if (ee) {
+		if (test_bit(BOOKE_IRQPRIO_EXTERNAL, p) ||
+		    test_bit(BOOKE_IRQPRIO_DBELL, p))
+			return true;
+	}
+
+	if (ce) {
+		if (test_bit(BOOKE_IRQPRIO_WATCHDOG, p) ||
+		    test_bit(BOOKE_IRQPRIO_CRITICAL, p) ||
+		    test_bit(BOOKE_IRQPRIO_DBELL_CRIT, p))
+			return true;
+	}
+
+	if (me) {
+		if (test_bit(BOOKE_IRQPRIO_MACHINE_CHECK, p))
+			return true;
+	}
+
+	if (de) {
+		if (test_bit(BOOKE_IRQPRIO_DEBUG, p))
+			return true;
+	}
+
+	return false;
+}
+
+
 /* Deliver the interrupt of the corresponding priority, if possible. */
 static int kvmppc_booke_irqprio_deliver(struct kvm_vcpu *vcpu,
                                         unsigned int priority)

@@ -192,6 +192,21 @@ void kvmppc_core_dequeue_external(struct kvm_vcpu *vcpu)
 	kvmppc_book3s_dequeue_irqprio(vcpu, BOOK3S_INTERRUPT_EXTERNAL_LEVEL);
 }
 
+bool kvmppc_crit_inhibited_irq_pending(struct kvm_vcpu *vcpu)
+{
+	unsigned long *p = &vcpu->arch.pending_exceptions;
+
+	if (!(kvmppc_get_msr(vcpu) & MSR_EE))
+		return false;
+
+	if (test_bit(BOOK3S_IRQPRIO_DECREMENTER, p) ||
+	    test_bit(BOOK3S_IRQPRIO_EXTERNAL, p) ||
+	    test_bit(BOOK3S_IRQPRIO_EXTERNAL_LEVEL, p))
+		return true;
+
+	return false;
+}
+
 int kvmppc_book3s_irqprio_deliver(struct kvm_vcpu *vcpu, unsigned int priority)
 {
 	int deliver = 1;
