@@ -380,11 +380,66 @@ static int kvmppc_emulate_store(struct kvm_vcpu *vcpu, ulong addr, u64 value,
 	return r;
 }
 
+static int kvmppc_emulate_load(struct kvm_vcpu *vcpu, ulong addr, u64 *value,
+			       int size)
+{
+	ulong paddr = addr;
+	int r;
+
+	r = kvmppc_ld(vcpu, &paddr, size, value, true);
+
+	switch (r) {
+	case EMULATE_DONE:
+		switch (size) {
+		case 1: *value = *(u8*)value; break;
+		case 2: *value = *(u16*)value; break;
+		case 4: *value = *(u32*)value; break;
+		case 8: break;
+		}
+
+		if (kvmppc_need_byteswap(vcpu)) {
+			switch (size) {
+			case 1: break;
+			case 2: *value = swab16(*value); break;
+			case 4: *value = swab32(*value); break;
+			case 8: *value = swab64(*value); break;
+			}
+		}
+		break;
+	case -ENOENT:
+#ifdef CONFIG_PPC_BOOK3S
+		kvmppc_core_queue_data_storage(vcpu, addr, DSISR_NOHPTE);
+#else
+		kvmppc_core_queue_dtlb_miss(vcpu, addr, ESR_DST);
+#endif
+		r = EMULATE_AGAIN;
+		break;
+	case -EPERM:
+#ifdef CONFIG_PPC_BOOK3S
+		kvmppc_core_queue_data_storage(vcpu, addr, DSISR_PROTFAULT);
+#else
+		kvmppc_core_queue_data_storage(vcpu, addr, 0);
+#endif
+		r = EMULATE_AGAIN;
+		break;
+	case EMULATE_DO_MMIO:
+		vcpu->stat.mmio_exits++;
+		vcpu->arch.paddr_accessed = paddr;
+		vcpu->arch.vaddr_accessed = addr;
+		vcpu->run->exit_reason = KVM_EXIT_MMIO;
+		r = kvmppc_emulate_loadstore(vcpu);
+		break;
+	}
+
+	return r;
+}
+
 /* Emulates privileged and non-privileged instructions */
 int kvmppc_emulate_any_instruction(struct kvm_vcpu *vcpu)
 {
 	u32 inst = kvmppc_get_last_inst(vcpu);
-	ulong addr, value;
+	ulong addr;
+	u64 value;
 	enum emulation_result emulated = EMULATE_DONE;
 	int advance = 1;
 
@@ -401,6 +456,17 @@ int kvmppc_emulate_any_instruction(struct kvm_vcpu *vcpu)
 		addr = get_addr(vcpu, (s16)get_d(inst), get_ra(inst));
 		value = kvmppc_get_gpr(vcpu, get_rs(inst));
 		emulated = kvmppc_emulate_store(vcpu, addr, value, 4);
+		break;
+	case OP_LD:
+		addr = get_addr(vcpu, (s16)get_d(inst), get_ra(inst));
+		if (addr & 0x3) {
+			/* other instructions */
+			emulated = EMULATE_FAIL;
+			break;
+		}
+		emulated = kvmppc_emulate_load(vcpu, addr, &value, 8);
+		if (emulated == EMULATE_DONE)
+			kvmppc_set_gpr(vcpu, get_rt(inst), value);
 		break;
 	default:
 		emulated = EMULATE_FAIL;
