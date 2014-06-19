@@ -633,6 +633,14 @@ int kvmppc_emulate_any_instruction(struct kvm_vcpu *vcpu)
 				kvmppc_emulate_cmp(vcpu, value, 0, true, 0,
 						   is_32bit);
 			break;
+		case OP_31_XOP_XOR:
+			value = kvmppc_get_gpr(vcpu, get_rs(inst));
+			value ^= kvmppc_get_gpr(vcpu, get_rb(inst));
+			kvmppc_set_gpr(vcpu, get_ra(inst), value);
+			if (get_rc(inst))
+				kvmppc_emulate_cmp(vcpu, value, 0, true, 0,
+						   is_32bit);
+			break;
 		default:
 			emulated = EMULATE_FAIL;
 			break;

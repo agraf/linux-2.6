@@ -101,6 +101,7 @@
 #define OP_31_XOP_STBUX     247
 #define OP_31_XOP_LHZX      279
 #define OP_31_XOP_LHZUX     311
+#define OP_31_XOP_XOR       316
 #define OP_31_XOP_MFSPR     339
 #define OP_31_XOP_LHAX      343
 #define OP_31_XOP_LHAUX     375
