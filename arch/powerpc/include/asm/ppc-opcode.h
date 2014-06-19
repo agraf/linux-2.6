@@ -122,6 +122,7 @@
 #define OP_ORI  24
 #define OP_ORIS 25
 #define OP_ANDI 28
+#define OP_RLD  30
 #define OP_LWZ  32
 #define OP_LD   58
 #define OP_LWZU 33
