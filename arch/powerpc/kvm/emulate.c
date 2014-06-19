@@ -595,6 +595,11 @@ int kvmppc_emulate_any_instruction(struct kvm_vcpu *vcpu)
 		value |= get_d(inst);
 		kvmppc_set_gpr(vcpu, get_ra(inst), value);
 		break;
+	case OP_ORIS:
+		value = kvmppc_get_gpr(vcpu, get_rs(inst));
+		value |= get_d(inst) << 16;
+		kvmppc_set_gpr(vcpu, get_ra(inst), value);
+		break;
 	case OP_ANDI:
 		value = kvmppc_get_gpr(vcpu, get_rs(inst));
 		value &= get_d(inst);
