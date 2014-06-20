@@ -103,12 +103,14 @@ static bool kvmppc_needs_emulation(struct kvm_vcpu *vcpu)
  *
  * returns:
  *
+ * == 2 if we're ready to go into guest state with NV registers restored
  * == 1 if we're ready to go into guest state
  * <= 0 if we need to go back to the host with return value
  */
 int kvmppc_prepare_to_enter(struct kvm_vcpu *vcpu)
 {
 	int r;
+	int enter_level = 1;
 
 	WARN_ON(irqs_disabled());
 	hard_irq_disable();
@@ -163,13 +165,15 @@ int kvmppc_prepare_to_enter(struct kvm_vcpu *vcpu)
 			r = kvmppc_emulate_any_instruction(vcpu);
 			if (r == EMULATE_DO_MMIO)
 				return 0;
+			if (r == EMULATE_DONE)
+				enter_level = 2;
 
 			hard_irq_disable();
 			continue;
 		}
 
 		kvm_guest_enter();
-		return 1;
+		return enter_level;
 	}
 
 	/* return to host */

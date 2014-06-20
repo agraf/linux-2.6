@@ -1174,10 +1174,20 @@ program_interrupt:
 		 * again due to a host external interrupt.
 		 */
 		s = kvmppc_prepare_to_enter(vcpu);
-		if (s <= 0)
+		switch (s) {
+		case -EINTR:
 			r = s;
-		else {
-			/* interrupts now hard-disabled */
+			break;
+		case 0:
+			/* Exit_reason is set, go to host */
+			r = RESUME_HOST;
+			break;
+		case 2:
+			/* Registers modified, reload then enter */
+			r = RESUME_GUEST_NV;
+			/* fall through */
+		case 1:
+			/* Interrupts now hard-disabled, enter guest */
 			kvmppc_fix_ee_before_entry();
 		}
 

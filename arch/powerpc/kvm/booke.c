@@ -1216,6 +1216,9 @@ int kvmppc_handle_exit(struct kvm_run *run, struct kvm_vcpu *vcpu,
 		if (s <= 0)
 			r = (s << 2) | RESUME_HOST | (r & RESUME_FLAG_NV);
 		else {
+			if (s == 2)
+				r = RESUME_GUEST_NV;
+
 			/* interrupts now hard-disabled */
 			kvmppc_fix_ee_before_entry();
 		}
