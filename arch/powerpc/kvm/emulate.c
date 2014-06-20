@@ -601,6 +601,37 @@ int kvmppc_emulate_rld(struct kvm_vcpu *vcpu, u32 inst)
 	return EMULATE_DONE;
 }
 
+int kvmppc_emulate_rlwimi(struct kvm_vcpu *vcpu, u32 inst)
+{
+	int sh = (inst >> 11) & 0x1f;
+	int mb = (inst >> 6) & 0x1f;
+	int me = (inst >> 1) & 0x1f;
+	u32 source = kvmppc_get_gpr(vcpu, get_rs(inst));
+	u32 dest = source;
+	u32 mask;
+
+	if (sh)
+		dest = (source << sh) | (source >> (32 - sh));
+
+	if (!mb)
+		mask = (u32)-1 << (31 - me);
+	else if (me == 31)
+		mask = (u32)-1 >> mb;
+	else {
+		mask = ((u32)-1 >> mb) ^ (((u32)-1 >> me) >> 1);
+		if (mb > me)
+			mask = ~mask;
+	}
+	dest &= mask;
+	dest |= kvmppc_get_gpr(vcpu, get_ra(inst)) & ~mask;
+
+	kvmppc_set_gpr(vcpu, get_ra(inst), dest);
+	if (get_rc(inst))
+		kvmppc_emulate_cmp(vcpu, dest, 0, true, 0, true);
+
+	return EMULATE_DONE;
+}
+
 /* Emulates privileged and non-privileged instructions */
 int kvmppc_emulate_any_instruction(struct kvm_vcpu *vcpu)
 {
@@ -674,6 +705,9 @@ int kvmppc_emulate_any_instruction(struct kvm_vcpu *vcpu)
 		break;
 	case OP_RLD:
 		emulated = kvmppc_emulate_rld(vcpu, inst);
+		break;
+	case OP_RLWIMI:
+		emulated = kvmppc_emulate_rlwimi(vcpu, inst);
 		break;
 	case 31:
 		switch (get_xop(inst)) {
