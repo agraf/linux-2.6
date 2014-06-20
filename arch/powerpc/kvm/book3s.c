@@ -368,9 +368,11 @@ pfn_t kvmppc_gfn_to_pfn(struct kvm_vcpu *vcpu, gfn_t gfn, bool writing,
 }
 EXPORT_SYMBOL_GPL(kvmppc_gfn_to_pfn);
 
-static int kvmppc_xlate(struct kvm_vcpu *vcpu, ulong eaddr, bool data,
-			bool iswrite, struct kvmppc_pte *pte)
+int kvmppc_xlate(struct kvm_vcpu *vcpu, ulong eaddr, enum xlate_instdata xlid,
+		 enum xlate_readwrite xlrw, struct kvmppc_pte *pte)
 {
+	bool data = (xlid == XLATE_DATA);
+	bool iswrite = (xlrw == XLATE_WRITE);
 	int relocated = (kvmppc_get_msr(vcpu) & (data ? MSR_DR : MSR_IR));
 	int r;
 
@@ -421,7 +423,8 @@ int kvmppc_st(struct kvm_vcpu *vcpu, ulong *eaddr, int size, void *ptr,
 
 	vcpu->stat.st++;
 
-	if (kvmppc_xlate(vcpu, *eaddr, data, true, &pte))
+	if (kvmppc_xlate(vcpu, *eaddr, data ? XLATE_DATA : XLATE_INST,
+			 XLATE_WRITE, &pte))
 		return -ENOENT;
 
 	*eaddr = pte.raddr;
@@ -444,7 +447,8 @@ int kvmppc_ld(struct kvm_vcpu *vcpu, ulong *eaddr, int size, void *ptr,
 
 	vcpu->stat.ld++;
 
-	if (kvmppc_xlate(vcpu, *eaddr, data, false, &pte))
+	if (kvmppc_xlate(vcpu, *eaddr, data ? XLATE_DATA : XLATE_INST,
+			 XLATE_READ, &pte))
 		goto nopte;
 
 	*eaddr = pte.raddr;
