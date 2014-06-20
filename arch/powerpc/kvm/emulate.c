@@ -601,7 +601,7 @@ int kvmppc_emulate_rld(struct kvm_vcpu *vcpu, u32 inst)
 	return EMULATE_DONE;
 }
 
-int kvmppc_emulate_rlwimi(struct kvm_vcpu *vcpu, u32 inst)
+int kvmppc_emulate_rlwi(struct kvm_vcpu *vcpu, u32 inst)
 {
 	int sh = (inst >> 11) & 0x1f;
 	int mb = (inst >> 6) & 0x1f;
@@ -623,7 +623,8 @@ int kvmppc_emulate_rlwimi(struct kvm_vcpu *vcpu, u32 inst)
 			mask = ~mask;
 	}
 	dest &= mask;
-	dest |= kvmppc_get_gpr(vcpu, get_ra(inst)) & ~mask;
+	if (get_op(inst) == OP_RLWIMI)
+		dest |= kvmppc_get_gpr(vcpu, get_ra(inst)) & ~mask;
 
 	kvmppc_set_gpr(vcpu, get_ra(inst), dest);
 	if (get_rc(inst))
@@ -707,7 +708,10 @@ int kvmppc_emulate_any_instruction(struct kvm_vcpu *vcpu)
 		emulated = kvmppc_emulate_rld(vcpu, inst);
 		break;
 	case OP_RLWIMI:
-		emulated = kvmppc_emulate_rlwimi(vcpu, inst);
+		emulated = kvmppc_emulate_rlwi(vcpu, inst);
+		break;
+	case OP_RLWINM:
+		emulated = kvmppc_emulate_rlwi(vcpu, inst);
 		break;
 	case 31:
 		switch (get_xop(inst)) {

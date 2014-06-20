@@ -120,6 +120,7 @@
 #define OP_ADDIS 15
 #define OP_BC   16
 #define OP_RLWIMI 20
+#define OP_RLWINM 21
 #define OP_ORI  24
 #define OP_ORIS 25
 #define OP_ANDI 28
