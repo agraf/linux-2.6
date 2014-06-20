@@ -308,17 +308,16 @@ int kvmppc_st(struct kvm_vcpu *vcpu, ulong *eaddr, int size, void *ptr,
 	      bool data)
 {
 	struct kvmppc_pte pte;
+	int r;
 
 	vcpu->stat.st++;
 
-	if (kvmppc_xlate(vcpu, *eaddr, data ? XLATE_DATA : XLATE_INST,
-			 XLATE_WRITE, &pte))
-		return -ENOENT;
+	r = kvmppc_xlate(vcpu, *eaddr, data ? XLATE_DATA : XLATE_INST,
+			 XLATE_WRITE, &pte);
+	if (r)
+		return r;
 
 	*eaddr = pte.raddr;
-
-	if (!pte.may_write)
-		return -EPERM;
 
 	if (kvm_write_guest(vcpu->kvm, pte.raddr, ptr, size))
 		return EMULATE_DO_MMIO;
@@ -332,12 +331,14 @@ int kvmppc_ld(struct kvm_vcpu *vcpu, ulong *eaddr, int size, void *ptr,
 {
 	struct kvmppc_pte pte;
 	hva_t hva = *eaddr;
+	int r;
 
 	vcpu->stat.ld++;
 
-	if (kvmppc_xlate(vcpu, *eaddr, data ? XLATE_DATA : XLATE_INST,
-			 XLATE_READ, &pte))
-		goto nopte;
+	r = kvmppc_xlate(vcpu, *eaddr, data ? XLATE_DATA : XLATE_INST,
+			 XLATE_READ, &pte);
+	if (r)
+		return r;
 
 	*eaddr = pte.raddr;
 
@@ -352,8 +353,6 @@ int kvmppc_ld(struct kvm_vcpu *vcpu, ulong *eaddr, int size, void *ptr,
 
 	return EMULATE_DONE;
 
-nopte:
-	return -ENOENT;
 mmio:
 	return EMULATE_DO_MMIO;
 }
