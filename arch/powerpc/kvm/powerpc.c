@@ -85,10 +85,6 @@ bool kvmppc_critical_section(struct kvm_vcpu *vcpu)
 
 static bool kvmppc_needs_emulation(struct kvm_vcpu *vcpu)
 {
-	/* XXX disable emulation for now, until we implemented everything */
-	if (true)
-		return false;
-
 	/* We're in a critical section, but an interrupt is pending */
 	if (kvmppc_critical_section(vcpu) &&
 	    kvmppc_crit_inhibited_irq_pending(vcpu))
