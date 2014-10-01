@@ -274,6 +274,78 @@ static void __init l2cr_init(void)
 }
 #endif
 
+#ifdef CONFIG_ADB_CUDA
+static void cuda_restart(void)
+{
+	struct adb_request req;
+
+	cuda_request(&req, NULL, 2, CUDA_PACKET, CUDA_RESET_SYSTEM);
+	for (;;)
+		cuda_poll();
+}
+
+static void cuda_shutdown(void)
+{
+	struct adb_request req;
+
+	cuda_request(&req, NULL, 2, CUDA_PACKET, CUDA_POWERDOWN);
+	for (;;)
+		cuda_poll();
+}
+
+#else
+#define cuda_restart()
+#define cuda_shutdown()
+#endif
+
+#ifndef CONFIG_ADB_PMU
+#define pmu_restart()
+#define pmu_shutdown()
+#endif
+
+#ifndef CONFIG_PMAC_SMU
+#define smu_restart()
+#define smu_shutdown()
+#endif
+
+static void pmac_restart(char *cmd)
+{
+	switch (sys_ctrler) {
+	case SYS_CTRLER_CUDA:
+		cuda_restart();
+		break;
+	case SYS_CTRLER_PMU:
+		pmu_restart();
+		break;
+	case SYS_CTRLER_SMU:
+		smu_restart();
+		break;
+	default: ;
+	}
+}
+
+static void pmac_power_off(void)
+{
+	switch (sys_ctrler) {
+	case SYS_CTRLER_CUDA:
+		cuda_shutdown();
+		break;
+	case SYS_CTRLER_PMU:
+		pmu_shutdown();
+		break;
+	case SYS_CTRLER_SMU:
+		smu_shutdown();
+		break;
+	default: ;
+	}
+}
+
+static void
+pmac_halt(void)
+{
+	pmac_power_off();
+}
+
 static void __init pmac_setup_arch(void)
 {
 	struct device_node *cpu, *ic;
@@ -380,78 +452,6 @@ void __init_refok note_bootable_part(dev_t dev, int part, int goodness)
 
 	ROOT_DEV = dev + part;
 	current_root_goodness = goodness;
-}
-
-#ifdef CONFIG_ADB_CUDA
-static void cuda_restart(void)
-{
-	struct adb_request req;
-
-	cuda_request(&req, NULL, 2, CUDA_PACKET, CUDA_RESET_SYSTEM);
-	for (;;)
-		cuda_poll();
-}
-
-static void cuda_shutdown(void)
-{
-	struct adb_request req;
-
-	cuda_request(&req, NULL, 2, CUDA_PACKET, CUDA_POWERDOWN);
-	for (;;)
-		cuda_poll();
-}
-
-#else
-#define cuda_restart()
-#define cuda_shutdown()
-#endif
-
-#ifndef CONFIG_ADB_PMU
-#define pmu_restart()
-#define pmu_shutdown()
-#endif
-
-#ifndef CONFIG_PMAC_SMU
-#define smu_restart()
-#define smu_shutdown()
-#endif
-
-static void pmac_restart(char *cmd)
-{
-	switch (sys_ctrler) {
-	case SYS_CTRLER_CUDA:
-		cuda_restart();
-		break;
-	case SYS_CTRLER_PMU:
-		pmu_restart();
-		break;
-	case SYS_CTRLER_SMU:
-		smu_restart();
-		break;
-	default: ;
-	}
-}
-
-static void pmac_power_off(void)
-{
-	switch (sys_ctrler) {
-	case SYS_CTRLER_CUDA:
-		cuda_shutdown();
-		break;
-	case SYS_CTRLER_PMU:
-		pmu_shutdown();
-		break;
-	case SYS_CTRLER_SMU:
-		smu_shutdown();
-		break;
-	default: ;
-	}
-}
-
-static void
-pmac_halt(void)
-{
-	pmac_power_off();
 }
 
 /* 
@@ -632,6 +632,8 @@ static int __init pmac_probe(void)
 	smu_cmdbuf_abs = memblock_alloc_base(4096, 4096, 0x80000000UL);
 #endif /* CONFIG_PMAC_SMU */
 
+	pm_power_off = pmac_power_off;
+
 	return 1;
 }
 
@@ -663,7 +665,6 @@ define_machine(powermac) {
 	.get_irq		= NULL,	/* changed later */
 	.pci_irq_fixup		= pmac_pci_irq_fixup,
 	.restart		= pmac_restart,
-	.power_off		= pmac_power_off,
 	.halt			= pmac_halt,
 	.time_init		= pmac_time_init,
 	.get_boot_time		= pmac_get_boot_time,
