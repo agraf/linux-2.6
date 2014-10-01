@@ -141,6 +141,8 @@ void machine_power_off(void)
 	machine_shutdown();
 	if (ppc_md.power_off)
 		ppc_md.power_off();
+	if (pm_power_off != machine_power_off)
+		pm_power_off();
 #ifdef CONFIG_SMP
 	smp_send_stop();
 #endif
