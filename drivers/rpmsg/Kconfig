@@ -20,4 +20,18 @@ config RPMSG_PRU
 
 	  If unsure, say N.
 
+config RPMSG_SDEMU
+	tristate "PRU SDemu host driver"
+	default n
+	depends on RPMSG
+	depends on REMOTEPROC
+	depends on PRUSS_REMOTEPROC
+	select CRC7
+	---help---
+	  An rpmsg driver that implements the ARM side of the SDemu SD card
+	  emulation platform. It requires respective firmware and hardware
+	  setup on a TI Sitara platform.
+
+	  If unsure, say N.
+
 endmenu

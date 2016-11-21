@@ -1862,6 +1862,9 @@ static int pinctrl_single_resume(struct platform_device *pdev)
 }
 #endif
 
+void *pinctl;
+EXPORT_SYMBOL(pinctl);
+
 static int pcs_probe(struct platform_device *pdev)
 {
 	struct device_node *np = pdev->dev.of_node;
@@ -1933,6 +1936,8 @@ static int pcs_probe(struct platform_device *pdev)
 		dev_err(pcs->dev, "could not ioremap\n");
 		return -ENODEV;
 	}
+
+	pinctl = pcs->base;
 
 	INIT_RADIX_TREE(&pcs->pgtree, GFP_KERNEL);
 	INIT_RADIX_TREE(&pcs->ftree, GFP_KERNEL);

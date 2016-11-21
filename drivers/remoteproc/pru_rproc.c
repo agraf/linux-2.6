@@ -118,6 +118,11 @@ struct pru_rproc {
 	struct mbox_client client;
 	int irq_vring;
 	int irq_kick;
+	int irq_in;
+	int irq_out;
+	int irq_done;
+	int irq_fast;
+	int irq_fast_installed;
 	struct pruss_mem_region mem_regions[PRU_MEM_MAX];
 	struct pruss_intc_config intc_config;
 	spinlock_t rmw_lock; /* register access lock */
@@ -193,6 +198,28 @@ int pru_rproc_set_ctable(struct rproc *rproc, enum pru_ctable_idx c, u32 addr)
 	return 0;
 }
 EXPORT_SYMBOL_GPL(pru_rproc_set_ctable);
+
+void pru_rproc_set_fast_interrupt(struct rproc *rproc, irqreturn_t (*cb) (int, void *),
+				  void *opaque)
+{
+	struct pru_rproc *pru = rproc->priv;
+	struct device *dev = &pru->rproc->dev;
+	int ret;
+
+	if (pru->irq_fast > 0) {
+		ret = request_irq(pru->irq_fast, cb,
+				  IRQF_ONESHOT, dev_name(dev), opaque);
+		if (ret) {
+			dev_err(dev, "failed to enable in interrupt, ret = %d\n",
+				ret);
+			return;
+		}
+
+		pru->irq_fast_installed = 1;
+	}
+
+}
+EXPORT_SYMBOL_GPL(pru_rproc_set_fast_interrupt);
 
 static inline u32 pru_debug_read_reg(struct pru_rproc *pru, unsigned int reg)
 {
@@ -448,6 +475,36 @@ static irqreturn_t pru_rproc_vring_interrupt(int irq, void *data)
 	return IRQ_HANDLED;
 }
 
+static irqreturn_t pru_rproc_in_interrupt(int irq, void *data)
+{
+	struct pru_rproc *pru = data;
+	extern void *pinctl;
+
+	/* Set pinmux to INPUT */
+	writel(0x2e, pinctl + 0x194); /* CMD */
+	writel(0x2e, pinctl + 0x198); /* DAT0 */
+
+	/* Tell PRU that we're done */
+	pruss_intc_trigger(pru->irq_done);
+
+	return IRQ_HANDLED;
+}
+
+static irqreturn_t pru_rproc_out_interrupt(int irq, void *data)
+{
+	struct pru_rproc *pru = data;
+	extern void *pinctl;
+
+	/* Set pinmux to OUTPUT */
+	writel(0x05, pinctl + 0x194); /* CMD */
+	writel(0x05, pinctl + 0x198); /* DAT0 */
+
+	/* Tell PRU that we're done */
+	pruss_intc_trigger(pru->irq_done);
+
+	return IRQ_HANDLED;
+}
+
 /* kick a virtqueue */
 static void pru_rproc_kick(struct rproc *rproc, int vq_id)
 {
@@ -503,6 +560,26 @@ static int pru_rproc_start(struct rproc *rproc)
 		}
 	}
 
+	if (pru->irq_in > 0) {
+		ret = request_irq(pru->irq_in, pru_rproc_in_interrupt,
+				  IRQF_ONESHOT, dev_name(dev), pru);
+		if (ret) {
+			dev_err(dev, "failed to enable in interrupt, ret = %d\n",
+				ret);
+			goto fail;
+		}
+	}
+
+	if (pru->irq_out > 0) {
+		ret = request_irq(pru->irq_out, pru_rproc_out_interrupt,
+				  IRQF_ONESHOT, dev_name(dev), pru);
+		if (ret) {
+			dev_err(dev, "failed to enable out interrupt, ret = %d\n",
+				ret);
+			goto fail;
+		}
+	}
+
 	val = CTRL_CTRL_EN | ((rproc->bootaddr >> 2) << 16);
 	pru_control_write_reg(pru, PRU_CTRL_CTRL, val);
 
@@ -529,6 +606,11 @@ static int pru_rproc_stop(struct rproc *rproc)
 	if (!list_empty(&pru->rproc->rvdevs) &&
 	    !pru->mbox && pru->irq_vring > 0)
 		free_irq(pru->irq_vring, pru);
+
+	if ((pru->irq_fast > 0) && pru->irq_fast_installed) {
+		free_irq(pru->irq_fast, pru);
+		pru->irq_fast_installed = 0;
+	}
 
 	/* undo INTC config */
 	pruss_intc_unconfigure(pru->pruss, &pru->intc_config);
@@ -811,6 +893,12 @@ static int pru_rproc_probe(struct platform_device *pdev)
 		dev_dbg(dev, "unable to get kick interrupt, status = %d\n",
 			ret);
 	}
+
+	pru->irq_fast = platform_get_irq_byname(pdev, "fast");
+	pru->irq_fast_installed = 0;
+	pru->irq_in = platform_get_irq_byname(pdev, "in");
+	pru->irq_out = platform_get_irq_byname(pdev, "out");
+	pru->irq_done = platform_get_irq_byname(pdev, "done");
 
 	if (pru->mbox && (pru->irq_vring > 0 || pru->irq_kick > 0))
 		dev_warn(dev, "both mailbox and vring/kick system events defined\n");
