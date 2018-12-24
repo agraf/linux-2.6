@@ -5114,8 +5114,11 @@ int x86_decode_insn(struct x86_emulate_ctxt *ctxt, void *insn, int insn_len)
 		memcpy(ctxt->fetch.data, insn, insn_len);
 	else {
 		rc = __do_insn_fetch_bytes(ctxt, 1);
-		if (rc != X86EMUL_CONTINUE)
+		if (rc != X86EMUL_CONTINUE) {
+			if (rc == X86EMUL_PROPAGATE_FAULT)
+				ctxt->have_exception = true;
 			return rc;
+		}
 	}
 
 	switch (mode) {
