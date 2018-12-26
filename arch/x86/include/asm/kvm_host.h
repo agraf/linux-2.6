@@ -134,7 +134,8 @@ static inline gfn_t gfn_to_index(gfn_t gfn, gfn_t base_gfn, int level)
 #define KVM_NR_FIXED_MTRR_REGION 88
 #define KVM_NR_VAR_MTRR 8
 
-#define ASYNC_PF_PER_VCPU 64
+#define ASYNC_PF_PER_VCPU_ORDER 6
+#define ASYNC_PF_PER_VCPU (1 << ASYNC_PF_PER_VCPU_ORDER)
 
 enum kvm_reg {
 	VCPU_REGS_RAX = 0,
@@ -730,7 +731,7 @@ struct kvm_vcpu_arch {
 
 	struct {
 		bool halted;
-		gfn_t gfns[roundup_pow_of_two(ASYNC_PF_PER_VCPU)];
+		gfn_t gfns[ASYNC_PF_PER_VCPU];
 		struct gfn_to_hva_cache data;
 		u64 msr_val;
 		u32 id;
