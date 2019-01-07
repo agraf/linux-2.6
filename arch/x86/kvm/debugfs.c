@@ -22,7 +22,8 @@ static int vcpu_get_tsc_offset(void *data, u64 *val)
 	return 0;
 }
 
-DEFINE_SIMPLE_ATTRIBUTE(vcpu_tsc_offset_fops, vcpu_get_tsc_offset, NULL, "%lld\n");
+DEFINE_DEBUGFS_ATTRIBUTE(vcpu_tsc_offset_fops,
+			 vcpu_get_tsc_offset, NULL, "%lld\n");
 
 static int vcpu_get_tsc_scaling_ratio(void *data, u64 *val)
 {
@@ -31,7 +32,8 @@ static int vcpu_get_tsc_scaling_ratio(void *data, u64 *val)
 	return 0;
 }
 
-DEFINE_SIMPLE_ATTRIBUTE(vcpu_tsc_scaling_fops, vcpu_get_tsc_scaling_ratio, NULL, "%llu\n");
+DEFINE_DEBUGFS_ATTRIBUTE(vcpu_tsc_scaling_fops,
+			 vcpu_get_tsc_scaling_ratio, NULL, "%llu\n");
 
 static int vcpu_get_tsc_scaling_frac_bits(void *data, u64 *val)
 {
@@ -39,25 +41,26 @@ static int vcpu_get_tsc_scaling_frac_bits(void *data, u64 *val)
 	return 0;
 }
 
-DEFINE_SIMPLE_ATTRIBUTE(vcpu_tsc_scaling_frac_fops, vcpu_get_tsc_scaling_frac_bits, NULL, "%llu\n");
+DEFINE_DEBUGFS_ATTRIBUTE(vcpu_tsc_scaling_frac_fops,
+			 vcpu_get_tsc_scaling_frac_bits, NULL, "%llu\n");
 
 int kvm_arch_create_vcpu_debugfs(struct kvm_vcpu *vcpu)
 {
 	struct dentry *ret;
 
-	ret = debugfs_create_file("tsc-offset", 0444,
+	ret = debugfs_create_file_unsafe("tsc-offset", 0444,
 							vcpu->debugfs_dentry,
 							vcpu, &vcpu_tsc_offset_fops);
 	if (!ret)
 		return -ENOMEM;
 
 	if (kvm_has_tsc_control) {
-		ret = debugfs_create_file("tsc-scaling-ratio", 0444,
+		ret = debugfs_create_file_unsafe("tsc-scaling-ratio", 0444,
 							vcpu->debugfs_dentry,
 							vcpu, &vcpu_tsc_scaling_fops);
 		if (!ret)
 			return -ENOMEM;
-		ret = debugfs_create_file("tsc-scaling-ratio-frac-bits", 0444,
+		ret = debugfs_create_file_unsafe("tsc-scaling-ratio-frac-bits", 0444,
 							vcpu->debugfs_dentry,
 							vcpu, &vcpu_tsc_scaling_frac_fops);
 		if (!ret)
