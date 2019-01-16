@@ -2249,6 +2249,7 @@ static __init int setup_vmcs_config(struct vmcs_config *vmcs_conf,
 			SECONDARY_EXEC_RDSEED_EXITING |
 			SECONDARY_EXEC_RDRAND_EXITING |
 			SECONDARY_EXEC_ENABLE_PML |
+			SECONDARY_EXEC_EPT_VIOLATION_VE |
 			SECONDARY_EXEC_TSC_SCALING |
 			SECONDARY_EXEC_PT_USE_GPA |
 			SECONDARY_EXEC_PT_CONCEAL_VMX |
@@ -3991,6 +3992,14 @@ static void vmx_compute_secondary_exec_control(struct vcpu_vmx *vmx)
 	vmx->secondary_exec_control = exec_control;
 }
 
+static void ept_set_ummio_spte_mask(void)
+{
+	/*
+	 * EPT #VE interrupts get generated when the PTE.VE bit is 0.
+	 */
+	kvm_mmu_set_ummio_spte_mask(VMX_EPT_RWX_MASK | VMX_EPT_VE_BIT, 0);
+}
+
 static void ept_set_mmio_spte_mask(void)
 {
 	/*
@@ -4047,6 +4056,9 @@ static void vmx_vcpu_setup(struct vcpu_vmx *vmx)
 		vmx->ple_window = ple_window;
 		vmx->ple_window_dirty = true;
 	}
+
+	/* XXX make per-cpu configurable from user space */
+	vmcs_write64(VE_INFORMATION_ADDRESS, 0);
 
 	vmcs_write32(PAGE_FAULT_ERROR_CODE_MASK, 0);
 	vmcs_write32(PAGE_FAULT_ERROR_CODE_MATCH, 0);
@@ -5265,10 +5277,11 @@ static void vmx_enable_tdp(void)
 		enable_ept_ad_bits ? VMX_EPT_ACCESS_BIT : 0ull,
 		enable_ept_ad_bits ? VMX_EPT_DIRTY_BIT : 0ull,
 		0ull, VMX_EPT_EXECUTABLE_MASK,
-		cpu_has_vmx_ept_execute_only() ? 0ull : VMX_EPT_READABLE_MASK,
+		(cpu_has_vmx_ept_execute_only() ? 0ull : VMX_EPT_READABLE_MASK) | VMX_EPT_VE_BIT,
 		VMX_EPT_RWX_MASK, 0ull);
 
 	ept_set_mmio_spte_mask();
+	ept_set_ummio_spte_mask();
 	kvm_enable_tdp();
 }
 

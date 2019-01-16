@@ -217,6 +217,8 @@ static u64 __read_mostly shadow_accessed_mask;
 static u64 __read_mostly shadow_dirty_mask;
 static u64 __read_mostly shadow_mmio_mask;
 static u64 __read_mostly shadow_mmio_value;
+static u64 __read_mostly shadow_ummio_mask;
+static u64 __read_mostly shadow_ummio_value;
 static u64 __read_mostly shadow_present_mask;
 static u64 __read_mostly shadow_me_mask;
 
@@ -300,6 +302,13 @@ void kvm_mmu_set_mmio_spte_mask(u64 mmio_mask, u64 mmio_value)
 	shadow_mmio_mask = mmio_mask | SPTE_SPECIAL_MASK;
 }
 EXPORT_SYMBOL_GPL(kvm_mmu_set_mmio_spte_mask);
+
+void kvm_mmu_set_ummio_spte_mask(u64 mmio_mask, u64 mmio_value)
+{
+	shadow_ummio_value = mmio_value | SPTE_SPECIAL_MASK;
+	shadow_ummio_mask = mmio_mask | SPTE_SPECIAL_MASK;
+}
+EXPORT_SYMBOL_GPL(kvm_mmu_set_ummio_spte_mask);
 
 static inline bool sp_ad_disabled(struct kvm_mmu_page *sp)
 {
@@ -390,9 +399,28 @@ static void mark_mmio_spte(struct kvm_vcpu *vcpu, u64 *sptep, u64 gfn,
 	mmu_spte_set(sptep, mask);
 }
 
+static void mark_ummio_spte(struct kvm_vcpu *vcpu, u64 *sptep, u64 gfn,
+			   unsigned access)
+{
+	u64 mask = shadow_ummio_value;
+	u64 gpa = gfn << PAGE_SHIFT;
+
+	mask |= gpa;
+	trace_mark_mmio_spte(sptep, gfn, access, 0);
+	mmu_spte_set(sptep, mask);
+}
+
 static bool is_mmio_spte(u64 spte)
 {
-	return (spte & shadow_mmio_mask) == shadow_mmio_value;
+	if ((spte & shadow_mmio_mask) == shadow_mmio_value)
+		return true;
+
+	/* VE MMIO */
+	if ((shadow_ummio_value == SPTE_SPECIAL_MASK) &&
+	    (spte & shadow_mmio_mask) == SPTE_SPECIAL_MASK)
+		return true;
+
+	return false;
 }
 
 static gfn_t get_mmio_spte_gfn(u64 spte)
@@ -415,7 +443,11 @@ static bool set_mmio_spte(struct kvm_vcpu *vcpu, u64 *sptep, gfn_t gfn,
 			  kvm_pfn_t pfn, unsigned access)
 {
 	if (unlikely(is_noslot_pfn(pfn))) {
-		mark_mmio_spte(vcpu, sptep, gfn, access);
+/* XXX test only */
+		if (gfn == 0x1000000)
+			mark_ummio_spte(vcpu, sptep, gfn, access);
+		else
+			mark_mmio_spte(vcpu, sptep, gfn, access);
 		return true;
 	}
 

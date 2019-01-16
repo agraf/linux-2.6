@@ -77,6 +77,7 @@
 #define SECONDARY_EXEC_ENCLS_EXITING		0x00008000
 #define SECONDARY_EXEC_RDSEED_EXITING		0x00010000
 #define SECONDARY_EXEC_ENABLE_PML               0x00020000
+#define SECONDARY_EXEC_EPT_VIOLATION_VE		0x00040000
 #define SECONDARY_EXEC_PT_CONCEAL_VMX		0x00080000
 #define SECONDARY_EXEC_XSAVES			0x00100000
 #define SECONDARY_EXEC_PT_USE_GPA		0x01000000
@@ -219,6 +220,8 @@ enum vmcs_field {
 	VMREAD_BITMAP_HIGH              = 0x00002027,
 	VMWRITE_BITMAP                  = 0x00002028,
 	VMWRITE_BITMAP_HIGH             = 0x00002029,
+	VE_INFORMATION_ADDRESS          = 0x0000202A,
+	VE_INFORMATION_ADDRESS_HIGH     = 0x0000202B,
 	XSS_EXIT_BITMAP                 = 0x0000202C,
 	XSS_EXIT_BITMAP_HIGH            = 0x0000202D,
 	ENCLS_EXITING_BITMAP		= 0x0000202E,
@@ -488,6 +491,7 @@ enum vmcs_field {
 #define VMX_VPID_EXTENT_SINGLE_NON_GLOBAL_BIT   (1ull << 11) /* (43 - 32) */
 
 #define VMX_EPT_MT_EPTE_SHIFT			3
+#define VMX_EPT_VE_SHIFT			63
 #define VMX_EPTP_PWL_MASK			0x38ull
 #define VMX_EPTP_PWL_4				0x18ull
 #define VMX_EPTP_PWL_5				0x20ull
@@ -505,6 +509,7 @@ enum vmcs_field {
 						 VMX_EPT_WRITABLE_MASK |       \
 						 VMX_EPT_EXECUTABLE_MASK)
 #define VMX_EPT_MT_MASK				(7ull << VMX_EPT_MT_EPTE_SHIFT)
+#define VMX_EPT_VE_BIT				(1ull << VMX_EPT_VE_SHIFT)
 
 /* The mask to use to trigger an EPT Misconfiguration in order to track MMIO */
 #define VMX_EPT_MISCONFIG_WX_VALUE		(VMX_EPT_WRITABLE_MASK |       \
