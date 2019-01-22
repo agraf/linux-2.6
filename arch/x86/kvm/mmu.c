@@ -416,8 +416,8 @@ static bool is_mmio_spte(u64 spte)
 		return true;
 
 	/* VE MMIO */
-	if ((shadow_ummio_value == SPTE_SPECIAL_MASK) &&
-	    (spte & shadow_mmio_mask) == SPTE_SPECIAL_MASK)
+	if (//(shadow_ummio_value == SPTE_SPECIAL_MASK) &&
+	    (spte & shadow_ummio_mask) == shadow_ummio_value)
 		return true;
 
 	return false;

@@ -47,6 +47,7 @@
 #define MSR_KVM_ASYNC_PF_EN 0x4b564d02
 #define MSR_KVM_STEAL_TIME  0x4b564d03
 #define MSR_KVM_PV_EOI_EN      0x4b564d04
+#define MSR_KVM_VE_INFO_ADDR   0x4b564d05
 
 struct kvm_steal_time {
 	__u64 steal;

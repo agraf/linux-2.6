@@ -2007,6 +2007,20 @@ static int vmx_set_msr(struct kvm_vcpu *vcpu, struct msr_data *msr_info)
 		else
 			vmx->pt_desc.guest.addr_a[index / 2] = data;
 		break;
+	case MSR_KVM_VE_INFO_ADDR:
+		ret = kvm_set_msr_common(vcpu, msr_info);
+		if (ret)
+			return ret;
+
+		{
+		/* XXX make per-cpu configurable from user space and fix leak */
+		kvm_pfn_t pfn = gfn_to_pfn(vmx->vcpu.kvm, gpa_to_gfn(data));
+		hpa_t hpa = pfn_to_hpa(pfn);
+		if (hpa) // XXX
+			vmcs_write64(VE_INFORMATION_ADDRESS, hpa);
+		}
+
+		break;
 	case MSR_TSC_AUX:
 		if (!msr_info->host_initiated &&
 		    !guest_cpuid_has(vcpu, X86_FEATURE_RDTSCP))
@@ -2217,11 +2231,11 @@ static __init int setup_vmcs_config(struct vmcs_config *vmcs_conf,
 	      CPU_BASED_MWAIT_EXITING |
 	      CPU_BASED_MONITOR_EXITING |
 	      CPU_BASED_INVLPG_EXITING |
-	      CPU_BASED_RDPMC_EXITING;
+	      CPU_BASED_RDPMC_EXITING |
+	      CPU_BASED_ACTIVATE_SECONDARY_CONTROLS;
 
 	opt = CPU_BASED_TPR_SHADOW |
-	      CPU_BASED_USE_MSR_BITMAPS |
-	      CPU_BASED_ACTIVATE_SECONDARY_CONTROLS;
+	      CPU_BASED_USE_MSR_BITMAPS;
 	if (adjust_vmx_controls(min, opt, MSR_IA32_VMX_PROCBASED_CTLS,
 				&_cpu_based_exec_control) < 0)
 		return -EIO;
@@ -2231,7 +2245,7 @@ static __init int setup_vmcs_config(struct vmcs_config *vmcs_conf,
 					   ~CPU_BASED_CR8_STORE_EXITING;
 #endif
 	if (_cpu_based_exec_control & CPU_BASED_ACTIVATE_SECONDARY_CONTROLS) {
-		min2 = 0;
+		min2 = SECONDARY_EXEC_EPT_VIOLATION_VE;
 		opt2 = SECONDARY_EXEC_VIRTUALIZE_APIC_ACCESSES |
 			SECONDARY_EXEC_VIRTUALIZE_X2APIC_MODE |
 			SECONDARY_EXEC_WBINVD_EXITING |
@@ -2249,7 +2263,6 @@ static __init int setup_vmcs_config(struct vmcs_config *vmcs_conf,
 			SECONDARY_EXEC_RDSEED_EXITING |
 			SECONDARY_EXEC_RDRAND_EXITING |
 			SECONDARY_EXEC_ENABLE_PML |
-			SECONDARY_EXEC_EPT_VIOLATION_VE |
 			SECONDARY_EXEC_TSC_SCALING |
 			SECONDARY_EXEC_PT_USE_GPA |
 			SECONDARY_EXEC_PT_CONCEAL_VMX |
@@ -3996,6 +4009,7 @@ static void ept_set_ummio_spte_mask(void)
 {
 	/*
 	 * EPT #VE interrupts get generated when the PTE.VE bit is 0.
+	 * Also RWX=0 means non-present and always triggers #VE.
 	 */
 	kvm_mmu_set_ummio_spte_mask(VMX_EPT_RWX_MASK | VMX_EPT_VE_BIT, 0);
 }
@@ -4056,9 +4070,6 @@ static void vmx_vcpu_setup(struct vcpu_vmx *vmx)
 		vmx->ple_window = ple_window;
 		vmx->ple_window_dirty = true;
 	}
-
-	/* XXX make per-cpu configurable from user space */
-	vmcs_write64(VE_INFORMATION_ADDRESS, 0);
 
 	vmcs_write32(PAGE_FAULT_ERROR_CODE_MASK, 0);
 	vmcs_write32(PAGE_FAULT_ERROR_CODE_MATCH, 0);
@@ -4126,6 +4137,10 @@ static void vmx_vcpu_setup(struct vcpu_vmx *vmx)
 		vmx->pt_desc.guest.output_mask = 0x7F;
 		vmcs_write64(GUEST_IA32_RTIT_CTL, 0);
 	}
+
+	/* XXX needs check? */
+	/* Disable #VE exceptions until the guest sets a target */
+	vmcs_write64(VE_INFORMATION_ADDRESS, ~0);
 }
 
 static void vmx_vcpu_reset(struct kvm_vcpu *vcpu, bool init_event)
